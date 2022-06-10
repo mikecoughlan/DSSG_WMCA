@@ -1,0 +1,3 @@
+Repository for the DSSG 2022 WMCA project.
+
+Will add more here when we set up a file structure...
