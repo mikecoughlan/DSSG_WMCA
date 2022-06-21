@@ -1,0 +1,2 @@
+Birmingham,Wolverhampton,Coventry,Dudley,Sandwell,Solihull,Walsall,Cannock Chase,North Warwickshire,Nuneaton and Bedworth,Redditch,Rugby,Shropshire,Stratford-on-Avon,Tamworth,Telford and Wrekin,Warwick,
+# Changed Warwickshire to Warwick. Retrieved from https://beta.wmca.org.uk/who-we-are/?_ga=2.166932926.1273695094.1655131817-357255492.1655131817
