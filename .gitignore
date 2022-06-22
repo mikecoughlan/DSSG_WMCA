@@ -1,3 +1,4 @@
+notebooks/merge_EPC_energy_consumption.ipynb
 .env
 data/raw
 data/processed
