@@ -1,0 +1,81 @@
+#DSSG models 
+
+#importing the prerequisites
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
+from sklearn.model_selection import  train_test_split,confusion_matrix,cross_val_score,StratifiedKFold
+
+
+
+#the train test split set
+def splitting_train_and_test(df, target, test_size):
+	
+	INPUTS:
+		df (pd.df)
+		target (str)
+		test_size (0.25)
+		
+	RETURNS:
+		X_train (np.array) 
+		X_test (np.array)
+		y_train (np.array) 
+		y_test (np.array)
+
+	y = target
+	print(target)
+	y_train = y[:int((len(df)*(1-test_size)))]
+	print(y_train)
+	y_test = y[int((len(df)*(1-test_size))):]
+	print(y_test)
+	X_train = df[:int((len(df)*(1-test_size)))]
+	X_test = df[int((len(df)*(1-test_size))):]
+
+	print(y_train.isnull().sum())
+	print(y_test.isnull().sum())
+	print(X_train.isnull().sum())
+	print(X_test.isnull().sum())
+
+	return X_train, X_test, y_train, y_test
+
+
+
+#SVM Model
+
+	def SVM(X_train, X_test, y_train, y_test,C,gamma):
+	
+		INPUTS:
+			X_train (np.array)
+			X_test (np.array)
+			y_train (np.array)
+			y_test (np.array)
+
+			
+		RETURNS:
+			model
+			
+         svc_model = SVC(C= 1, gamma= 1)
+         svc_model.fit(X_train, y_train)
+
+         prediction = svc_model .predict(X_test)
+	
+	
+	     return model
+
+
+
+
+dataset=load_dataset()
+X=dataset.data
+Y=dataset.target
+stratifiedkf=StratifiedKFold(n_splits=5)
+score=cross_val_score(X,Y,cv=stratifiedkf)
+print("Cross Validation Scores are {}".format(score))
+print("Average Cross Validation score :{}".format(score.mean()))
+
+
