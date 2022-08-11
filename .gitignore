@@ -1,5 +1,10 @@
 .env
 
 data
+scripts/calc_shadow/temp
+scripts/calc_shadow/shadow_raster
+scripts/calc_shadow/unfiltered
+scripts/calc_shadow/output
+scripts/calc_shadow/DSM
 
 .venv

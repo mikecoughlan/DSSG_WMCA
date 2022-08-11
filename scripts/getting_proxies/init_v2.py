@@ -4,6 +4,7 @@ from glob import glob
 from pathlib import Path
 import time
 import os
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
     
 def merge_os_files(addressbase_path, topology_path, building_path):
@@ -80,6 +81,10 @@ def load_info():
     fuel_poverty_df = pd.read_excel(FUEL_POVERTY_PATH, sheet_name="Table 3", header=2)
     fuel_poverty_df.drop(columns=["LSOA Name", "LA Code", "LA Name", "Region"], inplace=True)
     fuel_poverty_df.columns = ["lsoa_code", "num_households", "num_households_fuel_poverty", "prop_households_fuel_poor"]
+    
+    # Remove bottom text rows
+    crop_idx = np.where(fuel_poverty_df.isna().sum(axis=1) == len(fuel_poverty_df.columns))[0][0]
+    fuel_poverty_df = fuel_poverty_df[:crop_idx-1]
 
     return pcd_lsoa_msoa_df, fuel_poverty_df
 
@@ -102,8 +107,8 @@ def map_add_info(gdf, filename, pcd_lsoa_msoa_df, fuel_poverty_df, ROOT_DIR):
 
     # Map LSOA, MSOA and LA to postcode
     for col in list(pcd_lsoa_msoa_df.columns)[1:]:
-        mapping = dict(zip(pcd_lsoa_msoa_df['postcode'], pcd_lsoa_msoa_df[col]))
-        gdf[col] = gdf['postcode'].map(mapping)
+        mapping = dict(zip(pcd_lsoa_msoa_df['uprn'], pcd_lsoa_msoa_df[col]))
+        gdf[col] = gdf['uprn'].map(mapping)
 
     # Merge data to get postcodes associated with each LSOA code
     gdf = gdf.merge(fuel_poverty_df, on="lsoa_code", how="left")

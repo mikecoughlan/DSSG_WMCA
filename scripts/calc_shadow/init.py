@@ -273,15 +273,16 @@ class ProcessDSM():
         return output['OUTPUT']
 
     def get_extent(self, layer):
-        layer = QgsVectorLayer(layer, '', 'ogr' )
-        ext = layer.extent()
-        #transform = QgsCoordinateTransform(sourceCrs, self.PROJECT_CRS)
-        extent = layer.extent()
-        print(extent)
-        extent = str((extent.xMinimum(), extent.yMinimum(), extent.xMaximum(), extent.yMaximum())) + " [EPSG:27700]"
-        extent = extent.replace("(", "").replace(")", "")
+        params = {
+            'INPUT':layer,
+            'BAND':None
+            }
 
-        return extent
+        ext = processing.run("native:rasterlayerproperties", params)['EXTENT']
+        ext = ext.replace(" : ", ",").split(',')
+        ext = f"{ext[0]},{ext[2]},{ext[1]},{ext[3]} [EPSG:27700]"
+        
+        return ext 
 
     def clip_raster_by_mask(self, layer):
         """
@@ -344,7 +345,7 @@ class ProcessDSM():
         clip_params = {
             'INPUT':layer,
             'EXTENT':extent, 
-            'CLIP':False,
+            'CLIP':True,
             'OUTPUT': 'TEMPORARY_OUTPUT'
             }
         
@@ -543,8 +544,8 @@ class ProcessDSM():
         print("Filtering polygons based on criteria...")
         start = time.time()
 
-        if not os.path.isdir(self.TEMP_PATH + 'output\\'):
-            os.makedirs(self.TEMP_PATH + 'output\\')
+        if not os.path.isdir(self.ROOT_DIR + 'output\\'):
+            os.makedirs(self.ROOT_DIR + 'output\\')
 
         filter_params = {
             'INPUT':layer,
@@ -894,15 +895,22 @@ class ProcessOSMap(ProcessDSM):
     def __init__(self, HOUSE_SHP_PATH, crs='EPSG:27700'):
         self.PROJECT_CRS = QgsCoordinateReferenceSystem(crs)
         self.ROOT_DIR = os.getcwd() + "\\"
-        if not os.path.isdir(self.ROOT_DIR + "temp\\"):
-            os.makedirs(self.ROOT_DIR + "temp\\")
-        self.TEMP_PATH = self.ROOT_DIR + "temp\\"
         
+        self.TEMP_PATH = self.ROOT_DIR + "temp\\"
+        if not os.path.isdir(self.TEMP_PATH):
+            os.makedirs(self.TEMP_PATH)
+          
         self.HOUSE_SHP_PATH = HOUSE_SHP_PATH
-        self.extent = self.get_extent(self.HOUSE_SHP_PATH)
+        self.extent = self.extract_extent(self.HOUSE_SHP_PATH)
         self.tile_name = Path(HOUSE_SHP_PATH).stem
         print(self.tile_name)        
+        
     
+    def extract_extent(self, layer):
+        ext = QgsVectorLayer(layer, '', 'ogr' ).extent()
+        ext = f"{ext.xMinimum()},{ext.xMaximum()},{ext.yMinimum()},{ext.yMaximum()} [EPSG:27700]"
+        return ext
+
     def rasterize(self, layer):
         """
         Convert vector layer to pseudo DSM raster layer.
@@ -960,13 +968,14 @@ class ProcessOSMap(ProcessDSM):
         print("Filtering polygons based on criteria...")
         start = time.time()
 
-        if not os.path.isdir(self.ROOT_DIR + 'output_osmp\\'):
-            os.makedirs(self.ROOT_DIR + 'output_osmp\\')
+        output_path = self.ROOT_DIR + 'output_osmp\\'
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
 
         filter_params = {
             'INPUT':merged,
             'EXPRESSION':' "calculatedAreaValue" > 16 AND "shading_mean" >= 0.5',
-            'OUTPUT':self.ROOT_DIR + 'output_osmp\\' + self.tile_name + '.gml'
+            'OUTPUT':output_path + self.tile_name + '.gml'
             }
 
         output = processing.run("native:extractbyexpression", filter_params)
@@ -980,11 +989,11 @@ class ProcessOSMap(ProcessDSM):
 def main():
     # BUILDING_FOOTPRINT_DIR = ""
     # building_files = glob(BUILDING_FOOTPRINT_DIR + '*.gml')
-    # HOUSE_PATH = "C:\\Users\\lilia\\Downloads\\wmca_download_2022-07-29_10-07-36\\files\\wmca_prj\\project\\unzip_files\\output\\SJ9000.gml"
+    HOUSE_PATH = "C:\\Users\\lilia\\Downloads\\wmca_download_2022-07-29_10-07-36\\files\\wmca_prj\\project\\unzip_files\\output\\SJ9000.gml"
     # for path in building_files:
-    # program = ProcessOSMap(HOUSE_PATH)
-    # program.clear_temp_folder()
-    # program.filter_houses(program.HOUSE_SHP_PATH)
+    program = ProcessOSMap(HOUSE_PATH)
+    program.clear_temp_folder()
+    program.filter_houses(program.HOUSE_SHP_PATH)
 
     # DSM_ZIPPED_PATH = ""   
     # DSM_FILES = ['sj9000', 'sj9001', 'sj9002', 'sj9003'] 
@@ -1009,15 +1018,15 @@ def main():
     #     else:
     #         print(path)
     
-    HOUSE_SHP_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\LIDAR\\Birmingham Shapefile-20220719T105843Z-001\\birmingham_houses.shp"
-    DSM_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\DSSG_WMCA\\scripts\\calc_shadow\\DSM\\sp0585_DSM_1M.tif"
+    # HOUSE_SHP_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\LIDAR\\Birmingham Shapefile-20220719T105843Z-001\\Birmingham Shapefile\\birmingham_houses.shp"
+    # DSM_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\DSSG_WMCA\\scripts\\calc_shadow\\DSM\\sp0585_DSM_1M.tif"
     
-    program = ProcessDSM(DSM_PATH, HOUSE_SHP_PATH)
+    # program = ProcessDSM(DSM_PATH, HOUSE_SHP_PATH)
 
-    program.clear_temp_folder()
+    # program.clear_temp_folder()
 
-    segmented_layer = program.roof_segmentation(DSM_PATH)
-    filtered_layer = program.filter_roof_segments(segmented_layer)       
+    # segmented_layer = program.roof_segmentation(DSM_PATH)
+    # filtered_layer = program.filter_roof_segments(segmented_layer)       
     
 if __name__ == "__main__":
     main()
