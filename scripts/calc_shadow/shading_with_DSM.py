@@ -1,10 +1,6 @@
 # Run on OSGeo Shell
-from cgi import test
-from distutils.command.build import build
-from multiprocessing.dummy import Process
-from pathlib import Path
 from qgis.core import *
-from PyQt5.QtCore import QDate, QTime, QVariant
+from PyQt5.QtCore import QDate, QTime
 import sys
 
 # Initialize QGIS Application
@@ -16,7 +12,6 @@ app.initQgis()
 sys.path.append('C:\\Program Files\\QGIS 3.24.3\\apps\\qgis\\python\\plugins')
 sys.path.append('C:\\Users\\lilia\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins')
 
-
 # Import UMEP
 from processing_umep.processing_umep_provider import ProcessingUMEPProvider
 umep_provider = ProcessingUMEPProvider()
@@ -26,22 +21,24 @@ QgsApplication.processingRegistry().addProvider(umep_provider)
 from processing.core.Processing import Processing
 Processing.initialize()
 
+import processing
+from osgeo import gdal
+from osgeo.gdalconst import *
+from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
+
+import numpy as np
 from glob import glob
 import shutil
 import os
-import processing
-from osgeo import gdal
-import numpy as np
-from osgeo.gdalconst import *
+from pathlib import Path
 import time
-from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
 
 
 # DTM_FILE_PATH = "C:\\Users\\lilia\\Downloads\\SURVEY_LIDAR_Composite_ASC_DTM.zip"
 # DTM = zipfile.ZipFile(DTM_FILE_PATH, 'r')
 # DTM_FILE_PATH = [name for name in DTM.namelist() if name.endswith('.asc')]
 
-class ProcessDSM():
+class CalculateShading():
     """
     Compute attributes (shading, slope, aspect, area) to calculate solar pv output.
     """
@@ -468,7 +465,7 @@ class ProcessDSM():
         
         return output['OUTPUT']
 
-    def merge_vector_layers(self, layerA, layerB, fields):
+    def merge_vector_layers(self, layerA, layerB, fields, output_path='TEMPORARY_OUTPUT'):
         """
         Merge attribute tables of vector layers.
 
@@ -490,7 +487,7 @@ class ProcessDSM():
             'METHOD':1,
             'DISCARD_NONMATCHING':True,
             'PREFIX':'',
-            'OUTPUT':'TEMPORARY_OUTPUT'
+            'OUTPUT': output_path
             }
         
         output = processing.run("native:joinattributestable", params)
@@ -521,7 +518,7 @@ class ProcessDSM():
             'FIELD_LENGTH':0,
             'FIELD_PRECISION':0,
             'FORMULA':'area($geometry)/cos("slope_mean" * 3.14159265359 / 180)',
-            'OUTPUT': self.ROOT_DIR + 'unfiltered\\' + self.tile_name + '.gml'
+            'OUTPUT': self.ROOT_DIR + 'unfiltered\\' + self.tile_name + '.geojson'
             }
 
         output = processing.run("native:fieldcalculator", area_params)
@@ -533,7 +530,7 @@ class ProcessDSM():
 
     def filter_polygons(self, layer):
         """
-        Filter polygons for area>16m^2, shading >= 50%, slope betweeon 0-60 degrees and aspect between 67.5 and 292.5
+        Filter polygons for area > 5m^2, slope betweeon 0-60 degrees and aspect between 67.5 and 292.5
 
         Input
         layer(str): Path to vector layer
@@ -549,8 +546,8 @@ class ProcessDSM():
 
         filter_params = {
             'INPUT':layer,
-            'EXPRESSION':' ("AREA" > 16 AND 10 < "slope_mean" <= 60 AND 67.5 <= "aspect_mean" <=292.5 AND "shading_mean" >= 0.5) OR ("AREA" > 16 AND "slope_mean" <= 10 AND "shading_mean" >= 0.5)',
-            'OUTPUT':self.ROOT_DIR + 'output\\'+ self.tile_name + ".gml"
+            'EXPRESSION':' ("AREA" > 5 AND 10 < "slope_mean" <= 60 AND 67.5 <= "aspect_mean" <=292.5) OR ("AREA" > 5 AND "slope_mean" <= 10)',
+            'OUTPUT':self.ROOT_DIR + 'output\\'+ self.tile_name + ".geojson"
             }
 
         output = processing.run("native:extractbyexpression", filter_params)
@@ -891,110 +888,8 @@ class ProcessDSM():
         print(f"Completed tiling {end-start}s")
         return glob(self.TEMP_PATH + 'tile\\*.tif')
 
-class ProcessOSMap(ProcessDSM):
-    def __init__(self, HOUSE_SHP_PATH, crs='EPSG:27700'):
-        self.PROJECT_CRS = QgsCoordinateReferenceSystem(crs)
-        self.ROOT_DIR = os.getcwd() + "\\"
-        
-        self.TEMP_PATH = self.ROOT_DIR + "temp\\"
-        if not os.path.isdir(self.TEMP_PATH):
-            os.makedirs(self.TEMP_PATH)
-          
-        self.HOUSE_SHP_PATH = HOUSE_SHP_PATH
-        self.extent = self.extract_extent(self.HOUSE_SHP_PATH)
-        self.tile_name = Path(HOUSE_SHP_PATH).stem
-        print(self.tile_name)        
-        
-    
-    def extract_extent(self, layer):
-        ext = QgsVectorLayer(layer, '', 'ogr' ).extent()
-        ext = f"{ext.xMinimum()},{ext.xMaximum()},{ext.yMinimum()},{ext.yMaximum()} [EPSG:27700]"
-        return ext
-
-    def rasterize(self, layer):
-        """
-        Convert vector layer to pseudo DSM raster layer.
-
-        Input
-        layer(str): Path to vector layer
-
-        Output
-        (str): Path to raster layer
-        """
-        print('Rasterising vector layer...')
-        start = time.time()
-
-        params = {
-            'INPUT':layer,
-            'FIELD':'AbsHMax',
-            'BURN':0,
-            'USE_Z':False,
-            'UNITS':1,
-            'WIDTH':0.5,
-            'HEIGHT':0.5,
-            'EXTENT':self.extent,
-            'NODATA':0,
-            'OPTIONS':'',
-            'DATA_TYPE':5,
-            'INIT':0,
-            'INVERT':False,
-            'EXTRA':'',
-            'OUTPUT':'TEMPORARY_OUTPUT'
-            }
-
-        output = processing.run("gdal:rasterize", params)
-
-        end = time.time()
-        print(f"Completed rasterising in {end-start}s")
-
-        return output['OUTPUT']
-
-    def filter_houses(self, layer):
-        """
-        Calculate shading on rooftops and filter out rooftops that are too small or little shading.
-
-        Input:
-        layer(str): Path to vector layer
-
-        Output:
-        (str): Path to filtered layer
-        
-        """
-
-        raster = self.rasterize(layer)
-        shading_stats = self.calculate_shading(raster, self.HOUSE_SHP_PATH)
-        merged = self.merge_vector_layers(self.HOUSE_SHP_PATH, shading_stats, ['shading_mean'])
-
-        print("Filtering polygons based on criteria...")
-        start = time.time()
-
-        output_path = self.ROOT_DIR + 'output_osmp\\'
-        if not os.path.isdir(output_path):
-            os.makedirs(output_path)
-
-        filter_params = {
-            'INPUT':merged,
-            'EXPRESSION':' "calculatedAreaValue" > 16 AND "shading_mean" >= 0.5',
-            'OUTPUT':output_path + self.tile_name + '.gml'
-            }
-
-        output = processing.run("native:extractbyexpression", filter_params)
-        
-        end = time.time()
-        print(f"Completed filtering in {end-start}s")
-
-        return output['OUTPUT']
-
 
 def main():
-    # BUILDING_FOOTPRINT_DIR = ""
-    # building_files = glob(BUILDING_FOOTPRINT_DIR + '*.gml')
-    HOUSE_PATH = "C:\\Users\\lilia\\Downloads\\wmca_download_2022-07-29_10-07-36\\files\\wmca_prj\\project\\unzip_files\\output\\SJ9000.gml"
-    # for path in building_files:
-    program = ProcessOSMap(HOUSE_PATH)
-    program.clear_temp_folder()
-    program.filter_houses(program.HOUSE_SHP_PATH)
-
     # DSM_ZIPPED_PATH = ""   
     # DSM_FILES = ['sj9000', 'sj9001', 'sj9002', 'sj9003'] 
     # DSM_FILES = [DSM_ZIPPED_PATH + f + "_DSM_1M" for f in DSM_FILES]
@@ -1021,12 +916,12 @@ def main():
     # HOUSE_SHP_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\LIDAR\\Birmingham Shapefile-20220719T105843Z-001\\Birmingham Shapefile\\birmingham_houses.shp"
     # DSM_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\DSSG_WMCA\\scripts\\calc_shadow\\DSM\\sp0585_DSM_1M.tif"
     
-    # program = ProcessDSM(DSM_PATH, HOUSE_SHP_PATH)
+    program = CalculateShading(DSM_PATH, HOUSE_SHP_PATH)
 
-    # program.clear_temp_folder()
+    program.clear_temp_folder()
 
-    # segmented_layer = program.roof_segmentation(DSM_PATH)
-    # filtered_layer = program.filter_roof_segments(segmented_layer)       
+    segmented_layer = program.roof_segmentation(DSM_PATH)
+    filtered_layer = program.filter_roof_segments(segmented_layer)       
     
 if __name__ == "__main__":
     main()

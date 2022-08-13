@@ -71,7 +71,7 @@ def load_info():
 
     # Rename and select columns to keep
     keep_col = ['UPRN', 'PCDS', 'lsoa11cd', 'msoa11cd', 'LAD21CD']
-    col_names = ['uprn', 'postcode', 'lsoa_code', 'msoa_code', 'local-authority']
+    col_names = ['uprn', 'postcode', 'lsoa_code', 'msoa_code', 'local-authority', 'constituency']
     pcd_lsoa_msoa_df = pcd_lsoa_msoa_df[keep_col]
     pcd_lsoa_msoa_df = pcd_lsoa_msoa_df.rename(columns=dict(zip(keep_col,col_names)))
 
@@ -86,9 +86,18 @@ def load_info():
     crop_idx = np.where(fuel_poverty_df.isna().sum(axis=1) == len(fuel_poverty_df.columns))[0][0]
     fuel_poverty_df = fuel_poverty_df[:crop_idx-1]
 
-    return pcd_lsoa_msoa_df, fuel_poverty_df
+    # Load energy consumption data
+    ENERGY_CONSUMP_PATH = "data\external\sub-regional-fuel-poverty-2022-tables.xlsx"
+    energy_consump_df = pd.read_excel(ENERGY_CONSUMP_PATH, sheet_name="2020", header=4)
+    energy_consump_df.columns = [
+        'local-authority', 'la', 'msoa_code', 'msoa', 'lsoa_code', 'lsoa', 'num_meter', 'total_consumption', 'mean_counsumption', 'median_consumption'
+        ]
+    energy_consump_df = energy_consump_df[['la_code','msoa_code','lsoa_code', 'total_consumption', 'mean_counsumption', 'median_consumption']]
+    energy_consump_df = energy_consump_df[energy_consump_df['la_code'].isin(WMCA_code)]
 
-def map_add_info(gdf, filename, pcd_lsoa_msoa_df, fuel_poverty_df, ROOT_DIR):
+    return pcd_lsoa_msoa_df, fuel_poverty_df, energy_consump_df
+
+def map_add_info(gdf, filename, pcd_lsoa_msoa_df, fuel_poverty_df, energy_consump_df, ROOT_DIR):
     """
     Add LSOA, MSOA and local authority code, and fuel poverty data.
 
@@ -110,19 +119,24 @@ def map_add_info(gdf, filename, pcd_lsoa_msoa_df, fuel_poverty_df, ROOT_DIR):
         mapping = dict(zip(pcd_lsoa_msoa_df['uprn'], pcd_lsoa_msoa_df[col]))
         gdf[col] = gdf['uprn'].map(mapping)
 
-    # Merge data to get postcodes associated with each LSOA code
+    # Merge with fuel poverty on LSOA code
     gdf = gdf.merge(fuel_poverty_df, on="lsoa_code", how="left")
 
-    gdf.to_file(f"{OUTPUT_DIR}{filename}.gml", driver='GML')
-    print(f"{OUTPUT_DIR}{filename}.gml")
+    # Merge with energy consumption on LSOA code
+    energy_consump_df = energy_consump_df[["lsoa_code",'total_consumption', 'mean_counsumption', 'median_consumption']]
+    gdf = gdf.merge(energy_consump_df, on="lsoa_code", how="left")
+
+    gdf = gdf.to_crs("epsg:4326")
+    gdf.to_file(f"{OUTPUT_DIR}{filename}.geojson", driver='GeoJSON')
+    print(f"{OUTPUT_DIR}{filename}.geojson")
     end = time.time()
     print(f"Completed adding info in {end-start}s")
     
     return gdf
 
-def encode_var(gdf, filename, ROOT_DIR, nunique_limit=20):
+def encode_var(gdf, filename, fuel_poverty_avg, energy_consump_df, ROOT_DIR, nunique_limit=20):
     """
-    Encode non-numeric variables for model training. Exported as csv.
+    Encode non-numeric variables for model training and fill numeric na with mean. Exported as csv.
 
     Input
     gdf(GeoDataFrame): Merged dataframe
@@ -134,18 +148,38 @@ def encode_var(gdf, filename, ROOT_DIR, nunique_limit=20):
     OUTPUT_DIR = ROOT_DIR + 'encoded_proxy\\'
     if not os.path.isdir(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
+
+    df = pd.DataFrame(gdf.drop(columns=['geometry']))
+
+    fuel_poverty_col = ["num_households", "num_households_fuel_poverty", "prop_households_fuel_poor"]
+    for col in fuel_poverty_col:
+        df[col] = df[col].fillna(fuel_poverty_avg[col])
+
+    energy_consump_col = ['total_consumption', 'mean_counsumption', 'median_consumption']
+    hierarchy = ["msoa_code", "local-authority"]
+
+    for col in energy_consump_col:
+        for grouped_var in hierarchy:
+            if df[col].isna().sum() > 0:
+                grouped_df = energy_consump_df.groupby(grouped_var).mean()
+                mapping = dict(zip(energy_consump_df[grouped_var], grouped_df[col]))
+                idx = energy_consump_df[energy_consump_df[col].isna() == True].index
+                df.loc[idx, col] = df.loc[idx, grouped_var].map(mapping)
+
+        if df[col].isna().sum() > 0:
+            df[col] = df[col].fillna(energy_consump_df[col].mean())
     
     non_numeric_col = ['postcode', 'lsoa_code', 'msoa_code', 'local-authority']
     
     for col in non_numeric_col:
         if len(gdf[col].unique())<nunique_limit:
             one_hot_encoded = pd.get_dummies(gdf[col])
-            gdf[col] = one_hot_encoded.to_numpy().tolist()
+            one_hot_encoded.columns = [col+"_"+colname for colname in one_hot_encoded.columns]
+            df = pd.concat([df, one_hot_encoded], axis=1, index=False)
         else:
             label_encoder = LabelEncoder()
-            gdf[col] = label_encoder.fit_transform(gdf[col])
-
-    df = pd.DataFrame(gdf.drop(columns=['geometry']))
+            df[col] = label_encoder.fit_transform(df[col])
+    
     df.to_csv(f"{OUTPUT_DIR}{filename}.csv", index=False)
     
     print("Completed encoding variables.")
@@ -166,6 +200,7 @@ def main():
     topology_files = glob(topology_dir+"*.gml")
 
     pcd_lsoa_msoa_df, fuel_poverty_df = load_info()
+    fuel_poverty_avg = fuel_poverty_df.mean(axis=0) # impute with national average
 
     for i in range(len(landbaseprem_files)):
         merged_gdf = merge_os_files(landbaseprem_files[i], topology_files[i], building_height_files[i])
@@ -173,7 +208,7 @@ def main():
         filename = Path(landbaseprem_files[i]).stem
         final_gdf = map_add_info(merged_gdf, filename, pcd_lsoa_msoa_df, fuel_poverty_df, ROOT_DIR)
         
-        encode_var(final_gdf, filename, ROOT_DIR)
+        encode_var(final_gdf, filename, fuel_poverty_avg, ROOT_DIR)
 
 if __name__ == "__main__":
     main()
