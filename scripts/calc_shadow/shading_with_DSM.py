@@ -1,16 +1,16 @@
 # Run on OSGeo Shell
 from qgis.core import *
-from PyQt5.QtCore import QDate, QTime
+from PyQt5.QtCore import QDate, QTime, QVariant
 import sys
 
 # Initialize QGIS Application
-QgsApplication.setPrefixPath("C:\\OSGeo4W64\\apps\\qgis", True)
+QgsApplication.setPrefixPath("C://OSGeo4W64//apps//qgis", True)
 app = QgsApplication([], True)
 app.initQgis()
 
 # Add the path to Processing framework
-sys.path.append('C:\\Program Files\\QGIS 3.24.3\\apps\\qgis\\python\\plugins')
-sys.path.append('C:\\Users\\lilia\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins')
+sys.path.append('C://Program Files//QGIS 3.24.3//apps//qgis//python//plugins')
+sys.path.append('C://Users//lilia//AppData//Roaming//QGIS//QGIS3//profiles//default//python//plugins')
 
 # Import UMEP
 from processing_umep.processing_umep_provider import ProcessingUMEPProvider
@@ -32,9 +32,10 @@ import shutil
 import os
 from pathlib import Path
 import time
+import pandas as pd 
 
 
-# DTM_FILE_PATH = "C:\\Users\\lilia\\Downloads\\SURVEY_LIDAR_Composite_ASC_DTM.zip"
+# DTM_FILE_PATH = "C://Users//lilia//Downloads//SURVEY_LIDAR_Composite_ASC_DTM.zip"
 # DTM = zipfile.ZipFile(DTM_FILE_PATH, 'r')
 # DTM_FILE_PATH = [name for name in DTM.namelist() if name.endswith('.asc')]
 
@@ -44,10 +45,10 @@ class CalculateShading():
     """
     def __init__(self, DSM_PATH, HOUSE_SHP_PATH=None, crs='EPSG:27700'):
         self.PROJECT_CRS = QgsCoordinateReferenceSystem(crs)
-        self.ROOT_DIR = os.getcwd() + "\\"
-        if not os.path.isdir(self.ROOT_DIR + "temp\\"):
-            os.makedirs(self.ROOT_DIR + "temp\\")
-        self.TEMP_PATH = self.ROOT_DIR + "temp\\"
+        self.ROOT_DIR = os.getcwd() + "//"
+        if not os.path.isdir(self.ROOT_DIR + "temp//"):
+            os.makedirs(self.ROOT_DIR + "temp//")
+        self.TEMP_PATH = self.ROOT_DIR + "temp//"
         self.tile_name = Path(DSM_PATH).stem
         print(self.tile_name)
         
@@ -90,7 +91,7 @@ class CalculateShading():
         print("Converting DSM to tif...")
         start = time.time()
 
-        layer_name = layer.split('\\')[-1].split('.')[0]
+        layer_name = layer.split('//')[-1].split('.')[0]
 
         asc_to_tif_params = {
             'INPUT':layer,
@@ -100,7 +101,7 @@ class CalculateShading():
             'OPTIONS':'',
             'EXTRA':'',
             'DATA_TYPE':0,
-            'OUTPUT':self.ROOT_DIR + "DSM\\" + layer_name + '.tif'
+            'OUTPUT':self.ROOT_DIR + "DSM//" + layer_name + '.tif'
         }
 
         output = processing.run("gdal:translate", asc_to_tif_params)
@@ -243,7 +244,7 @@ class CalculateShading():
 
         Input:
         layer(str): Path to raster layer 
-        foldername(str): Name of folder where layer sits with '\\' at the end
+        foldername(str): Name of folder where layer sits with '//' at the end
         threshold(int): Minimum size of polygons (in pixels) to replace
 
         Output:
@@ -508,8 +509,8 @@ class CalculateShading():
         print("Calculating area of layer...")
         start = time.time()
 
-        if not os.path.isdir(self.ROOT_DIR + 'unfiltered\\'):
-            os.makedirs(self.ROOT_DIR + 'unfiltered\\')
+        if not os.path.isdir(self.ROOT_DIR + 'unfiltered//'):
+            os.makedirs(self.ROOT_DIR + 'unfiltered//')
 
         area_params = {
             'INPUT':layer,
@@ -518,7 +519,7 @@ class CalculateShading():
             'FIELD_LENGTH':0,
             'FIELD_PRECISION':0,
             'FORMULA':'area($geometry)/cos("slope_mean" * 3.14159265359 / 180)',
-            'OUTPUT': self.ROOT_DIR + 'unfiltered\\' + self.tile_name + '.geojson'
+            'OUTPUT': self.ROOT_DIR + 'unfiltered//' + self.tile_name + '.geojson'
             }
 
         output = processing.run("native:fieldcalculator", area_params)
@@ -541,13 +542,10 @@ class CalculateShading():
         print("Filtering polygons based on criteria...")
         start = time.time()
 
-        if not os.path.isdir(self.ROOT_DIR + 'output\\'):
-            os.makedirs(self.ROOT_DIR + 'output\\')
-
         filter_params = {
             'INPUT':layer,
-            'EXPRESSION':' ("AREA" > 5 AND 10 < "slope_mean" <= 60 AND 67.5 <= "aspect_mean" <=292.5) OR ("AREA" > 5 AND "slope_mean" <= 10)',
-            'OUTPUT':self.ROOT_DIR + 'output\\'+ self.tile_name + ".geojson"
+            'EXPRESSION':' ("AREA" > 5 AND 10 < "slope_mean" <= 60 AND 67.5 <= "aspect_mean" <=292.5) OR ("AREA" > 5 AND 0 < "slope_mean" <= 10 AND "aspect_mean" > 0)',
+            'OUTPUT':self.TEMP_PATH + 'filtered_houses.geojson'
             }
 
         output = processing.run("native:extractbyexpression", filter_params)
@@ -577,13 +575,13 @@ class CalculateShading():
         
         index = 0
         
-        if not os.path.isdir(self.TEMP_PATH + 'shading\\'):
-            os.makedirs(self.TEMP_PATH + 'shading\\')
+        if not os.path.isdir(self.TEMP_PATH + 'shading//'):
+            os.makedirs(self.TEMP_PATH + 'shading//')
 
         dates_dict = {
             'spring': QDate.fromString("23-9-2022", "d-M-yyyy"),
-            # 'winter': QDate.fromString("21-12-2022", "d-M-yyyy"),
-            # 'summer': QDate.fromString("21-6-2022", "d-M-yyyy"),
+            'winter': QDate.fromString("21-12-2022", "d-M-yyyy"),
+            'summer': QDate.fromString("21-6-2022", "d-M-yyyy"),
             'fall': QDate.fromString("20-3-2022", "d-M-yyyy")
         }
 
@@ -603,21 +601,21 @@ class CalculateShading():
                 'ITERTIME':120,
                 'ONE_SHADOW':False,
                 'TIMEINI':QTime(12, 46, 56),
-                'OUTPUT_DIR': self.TEMP_PATH + 'shading\\'
+                'OUTPUT_DIR': self.TEMP_PATH + 'shading//'
                 }
             
             output = processing.run("umep:Solar Radiation: Shadow Generator", shading_params)
 
             print(f"Shaded for {name}")
 
-            no_of_files = os.listdir(self.TEMP_PATH + 'shading\\')
+            no_of_files = os.listdir(self.TEMP_PATH + 'shading//')
 
             for j in range(0, no_of_files.__len__()):
-                tempgdal = gdal.Open(self.TEMP_PATH + 'shading\\' + no_of_files[j])
+                tempgdal = gdal.Open(self.TEMP_PATH + 'shading//' + no_of_files[j])
                 tempraster = tempgdal.ReadAsArray().astype(float)
                 fillraster = fillraster + tempraster
                 tempgdal = None
-                os.remove(self.TEMP_PATH + 'shading\\' + no_of_files[j])
+                os.remove(self.TEMP_PATH + 'shading//' + no_of_files[j])
 
                 index = index + 1 #A counter that specifies total numer of shadows in a year (2 hour resolution)
 
@@ -680,7 +678,6 @@ class CalculateShading():
         polygon_path = []
 
         for x in ['slope', 'aspect']:
-            print(params[x]['table'])
             reclass_layer = self.reclass(params[x]['path'], params[x]['table'])
             sieve_layer = self.sieve(reclass_layer, params[x]['threshold'])
             
@@ -695,11 +692,11 @@ class CalculateShading():
         buffer_path = self.buffer(intersection_path, -0.8)
         buffer_path = self.buffer(buffer_path, 0.8)
         buffer_path = self.buffer(buffer_path, 1)
-        buffer_path = self.buffer(buffer_path, -1)
+        buffer_path = self.buffer(buffer_path, -1.5) # added 0.5m buffer 
 
         print("Completed roof segmentation.")
         return buffer_path
-
+    
     def filter_roof_segments(self, layer):
         """
         Filter roof segments for slope, area and shading.
@@ -721,7 +718,7 @@ class CalculateShading():
         shading_stats = self.calculate_shading(self.DSM_path, layer)
     
         # Get final merged layer
-        slope_aspect_merge = self.merge_vector_layers(slope_stats, aspect_stats, ['aspect_mean'])
+        slope_aspect_merge = self.merge_vector_layers(slope_stats, aspect_stats, ['aspect_mean'])        
         height_merge = self.merge_vector_layers(slope_aspect_merge, height_stats, ['height_mean'])
         merged = self.merge_vector_layers(height_merge, shading_stats, ['shading_mean'])
         area = self.calculate_area(merged)
@@ -729,13 +726,86 @@ class CalculateShading():
         # Filter layers
         filtered = self.filter_polygons(area)
 
+        # Add kk factor and uprn
+        final_layer = self.add_uprn(filtered)
+        kk_factor = self.add_kk_factor(final_layer)
+
         end = time.time()
         print(f"Completed filtering houses {end-start}s")
-        return filtered
+        return final_layer
+
+    def add_kk_factor(self, layer):
+        print("Adding kk factor...")
+        start = time.time()
+
+        irradiance_df = pd.read_csv("C:/Users/lilia/Documents/GitHub/WMCA/DSSG_WMCA/data/processed/irradiance.csv", index_col=0)
+        irradiance_df.index = irradiance_df.index.astype(int)
+        irradiance_df.columns = irradiance_df.columns.astype(int)
+        
+        layer = QgsVectorLayer(layer,"","ogr")
+        layer_provider=layer.dataProvider()
+        layer_provider.addAttributes([QgsField("kk_factor",QVariant.Double)])
+        layer.updateFields()
+        
+        fields = layer.fields()
+        aspect_id = fields.indexOf('aspect_mean')
+        slope_id = fields.indexOf('slope_mean')
+        kk_id = fields.indexOf('kk_factor')
+        
+        layer.startEditing()
+        features=layer.getFeatures()
+        for f in features:
+            aspect = f.attributes()[aspect_id]
+            slope = f.attributes()[slope_id]
+            
+            if 0<aspect<175 and 0<slope<90:
+                aspect = 5 * round(aspect/5) # round to nearest 5
+                slope = round(slope)
+                print(aspect, slope)
+                if 0<slope<=10:
+                    kk_factor = irradiance_df.max().max()
+                else:
+                    kk_factor = int(irradiance_df[aspect][slope])
+                
+                print(f"kk_factor: {kk_factor}")
+
+                layer.changeAttributeValue(f.id(), kk_id, kk_factor)
+        
+        layer.commitChanges()
+
+        end = time.time()
+        print(f"Completed adding kk factor {end-start}s")
+        return layer
+
+    def add_uprn(self, layer):
+        print("Adding UPRN...")
+        start = time.time()
+
+        
+        if not os.path.isdir(self.ROOT_DIR + 'output//'):
+            os.makedirs(self.ROOT_DIR + 'output//')
+
+
+        params = {
+            'INPUT':layer,
+            'PREDICATE':[5],
+            'JOIN':self.HOUSE_SHP_PATH,
+            'JOIN_FIELDS':['uprn'],
+            'METHOD':0,
+            'DISCARD_NONMATCHING':False,
+            'PREFIX':'',
+            'OUTPUT': self.ROOT_DIR + 'output//'+ self.tile_name + ".geojson"
+            }
+        output = processing.run("native:joinattributesbylocation", params)
+
+        end = time.time()
+        print(f"Completed adding UPRN {end-start}s")
+
+        return output['OUTPUT']
 
     def clip_raster_by_extent(self, layer, extent):
-        if not os.path.isdir(self.TEMP_PATH + 'clip_raster\\'):
-            os.makedirs(self.TEMP_PATH + 'clip_raster\\')
+        if not os.path.isdir(self.TEMP_PATH + 'clip_raster//'):
+            os.makedirs(self.TEMP_PATH + 'clip_raster//')
 
         name = layer.split('.')[-2]
         print(name)
@@ -748,146 +818,12 @@ class CalculateShading():
             'OPTIONS':'',
             'DATA_TYPE':0,
             'EXTRA':'',
-            'OUTPUT': self.TEMP_PATH + f'clip_raster\\{name}.tif'
+            'OUTPUT': self.TEMP_PATH + f'clip_raster//{name}.tif'
             }
         
         output = processing.run("gdal:cliprasterbyextent", params)
 
         return output['OUTPUT']
-
-    def solar_radiation(self, DSM, met_file, UTC=1):
-        """
-        Calculate pixel wise potential solar energy (kwH) using DSM
-        """
-        print("Calculating solar irradiance...")
-        start = time.time()
-        
-        overlap = 0
-        tile_size = 500
-
-        layer = self.tile(DSM, tile_size, overlap)
-
-        # Convert in QGIS in UMEP > Pre-Processor > Meteorological Data > Prepare Existing Data
-        # No processing tool available
-        MET_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\solar pv\\tmy_52.480_-1.903_2005_2020.txt"
-        
-        # extent = extent.replace(' [EPSG:27700]', '').split(',')
-        # extent = [int(x.split('.')[0]) for x in extent]
-        # x1, x_max = extent[0], extent[2]
-        # y1, y_max = extent[1], extent[3]
-        # step = tile_size - overlap/2
-
-        if not os.path.isdir(self.TEMP_PATH + 'SEBE\\'):
-            os.makedirs(self.TEMP_PATH + 'SEBE\\')
-
-        for tile in layer:
-            print(tile)
-            name = Path(tile).stem
-            print(f"Calculating solar irradiance for {name} ...")
-            aspect = self.calculate_aspect(tile)
-            wall_output = processing.run(
-                "umep:Urban Geometry: Wall Height and Aspect", 
-                {
-                    'INPUT':tile,
-                    'INPUT_LIMIT':3,
-                    'OUTPUT_HEIGHT':'TEMPORARY_OUTPUT'
-                    })
-            params = {
-                'INPUT_DSM':tile,
-                'INPUT_CDSM':None,
-                'TRANS_VEG':3,
-                'INPUT_TDSM':None,
-                'INPUT_THEIGHT':25,
-                'INPUT_HEIGHT': wall_output['OUTPUT_HEIGHT'],
-                'INPUT_ASPECT':aspect,
-                'ALBEDO':0.15,
-                'INPUTMET':met_file,
-                'ONLYGLOBAL':False,
-                'UTC': UTC,
-                'SAVESKYIRR':False,
-                'IRR_FILE':'TEMPORARY_OUTPUT',
-                'OUTPUT_DIR':self.TEMP_PATH + 'SEBE\\',
-                'OUTPUT_ROOF': self.TEMP_PATH + 'SEBE\\' + name + '.tif'
-                }
-
-            output = processing.run("umep:Solar Radiation: Solar Energy of Builing Envelopes (SEBE)", params)
-
-            print(f"Completed calculating solar irradiance for {name}.")
-
-            # x2 = min(x_max, x1+step)
-            # y2 = min(y_max, y1+step)
-            # clip_extent = f"{x1},{y1},{x2},{y2} [EPSG:27700]"
-            # print(tile)
-            # print(clip_extent)
-            # x1, y1 = x2, y2
-
-            # print(self.clip_raster_by_extent(tile, clip_extent))
-        
-        end = time.time()
-        print(f'Completed calculating solar irradiance in {end-start}s')
-
-        start =time.time()
-        print("Merging tiles...")
-        params = {
-            'INPUT': glob(self.TEMP_PATH + 'SEBE\\*tif'),
-            'PCT':False,
-            'SEPARATE':False,
-            'NODATA_INPUT':None,
-            'NODATA_OUTPUT':None,
-            'OPTIONS':'',
-            'EXTRA':'',
-            'DATA_TYPE':5,
-            'OUTPUT':'TEMPORARY_OUTPUT'
-            }
-            
-        output = processing.run("gdal:merge", params)
-
-        end = time.time()
-        print(f"Completed merge tiles in {end-start}s")
-
-        return output['OUTPUT']
-
-    def tile(self, layer, tile_size, overlap):
-        """
-        Splitting raster into tiles for processing. Original tile was 1000px x 1000px
-
-        Inputs
-        layer(str): Path to raster
-        tile_size(int): Maximum pixel size for square tile
-        overlap(int): Number of pixels to overlap
-
-        Output
-        (list): List of paths to all tiles
-        """
-        if not os.path.isdir(self.TEMP_PATH + 'tile\\'):
-            os.makedirs(self.TEMP_PATH + 'tile\\')
-
-        print("Tiling...")
-        start = time.time()
-
-        params = {
-            'INPUT':[layer],
-            'TILE_SIZE_X':tile_size,
-            'TILE_SIZE_Y':tile_size,
-            'OVERLAP':overlap,
-            'LEVELS':1,
-            'SOURCE_CRS':None,
-            'RESAMPLING':0,
-            'DELIMITER':';',
-            'OPTIONS':'',
-            'EXTRA':'',
-            'DATA_TYPE':5,
-            'ONLY_PYRAMIDS':False,
-            'DIR_FOR_ROW':False,
-            'OUTPUT': self.TEMP_PATH + 'tile'
-            }
-        
-        processing.run("gdal:retile", params)
-
-        end = time.time()
-        print(f"Completed tiling {end-start}s")
-        return glob(self.TEMP_PATH + 'tile\\*.tif')
-
 
 def main():
     # DSM_ZIPPED_PATH = ""   
@@ -913,9 +849,9 @@ def main():
     #     else:
     #         print(path)
     
-    # HOUSE_SHP_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\LIDAR\\Birmingham Shapefile-20220719T105843Z-001\\Birmingham Shapefile\\birmingham_houses.shp"
-    # DSM_PATH = "C:\\Users\\lilia\\Documents\\GitHub\\WMCA\\DSSG_WMCA\\scripts\\calc_shadow\\DSM\\sp0585_DSM_1M.tif"
-    
+    HOUSE_SHP_PATH = "C:/Users/lilia/Downloads/wmca_download_2022-07-29_10-07-36/files/wmca_prj/project/unzip_files/output/SJ9000.geojson"
+    DSM_PATH = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//scripts//calc_shadow//DSM//sj9000_DSM_1M.asc"
+
     program = CalculateShading(DSM_PATH, HOUSE_SHP_PATH)
 
     program.clear_temp_folder()

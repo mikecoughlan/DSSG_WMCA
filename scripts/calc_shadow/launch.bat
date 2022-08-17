@@ -12,5 +12,5 @@ set PYTHONPATH=%QGIS%\python;%PYTHONPATH%
 
 
 REM Launch python job
-python C:\Users\lilia\Documents\GitHub\WMCA\DSSG_WMCA\scripts\calc_shadow\shading_without_DSM.py
+python C:\Users\lilia\Documents\GitHub\WMCA\DSSG_WMCA\scripts\calc_shadow\shading_with_DSM.py
 pause

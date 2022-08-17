@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 from glob import glob
 import time 
+import os
 
 import pvlib
 from pvlib.pvsystem import PVSystem, Array, FixedMount
@@ -82,57 +83,155 @@ def avg_pv_output(location, weather):
     print('Calculating solar output...')
     start = time.time()
 
-    slope_vals = np.arange(0, 61, 10)
-    aspect_vals = np.arange(0, 361 , 15)
+    slope_vals = np.arange(0, 61, 1)
+    aspect_vals = np.arange(0, 175, 5)
 
     total_energy, counter = 0, 0
-
     for slope in slope_vals:
         for aspect in aspect_vals:
             total_energy += calculate_PV(location, weather, slope, aspect)
             counter += 1
-
     avg_energy = total_energy/counter
 
     end = time.time()
     print(f"Completed calculating PV output of {avg_energy} in {end-start}s")
+
     return avg_energy
 
-def main():
-    FOLDER_DIR = '../../data/output/proxy_data/'
-    OUTPUT_DIR = '../../data/output/pv_output/'
-    filesInFolder = glob(FOLDER_DIR + '*.geojson')
+def roof_segment_output(db, weather, timezone='Etc/GMT+1'):
+    """
+    Estimated yearly solar panel output for each roof segment given its slope and aspect.
 
-    for path in filesInFolder:
-        filename = Path(filesInFolder).stem
-        print(f'Computing pv output for {filename}...')
-        db = gpd.read_file(path, driver='GeoJSON')
-        db = db.to_crs(4326)
-        db['lng'] = db.geometry.centroid.x
-        db['lat'] = db.geometry.centroid.y
+    Input
+    db(DataFrame): Roof segment features
+    weather(Dataframe): Hourly weather values for several years
+    timezone(str)
 
-        latitude = db['lat'].mean()
-        longitude = db['lng'].mean()
-        avg_alt = 103 # average altitude of West Midlands
+    Output
+    energies(list): Solar pv output estimates for roof segments
+    
+    """
+    print('Calculating solar output...')
+    start = time.time()
 
+    energies = []
+    for index, row in db.iterrows():
         location = Location(
-                            latitude,
-                            longitude,
-                            name='',
-                            altitude=avg_alt,
-                            tz='Etc/GMT+1',
-                        )
-        weather = get_weather(latitude, longitude)
+            row['lat'],
+            row['lng'],
+            name='',
+            altitude=row['height_mean'],
+            tz=timezone
+        )
+        annual_energy = calculate_PV(location, weather, row['slope_mean'], row['aspect_mean'])
+        energies.append(annual_energy)
 
-        pv_output = avg_pv_output(location, weather)
-        db['avg_pv_output'] = db['shading_mean'] * pv_output
+    end = time.time()
+    print(f"Completed calculating PV output of {annual_energy} in {end-start}s")
 
-        # Select columns to keep 
-        keep_cols = ['uprn', 'lng', 'lat', 'shading_mean', 'calculatedAreaValue', 'pv_output']
-        db = db[keep_cols]
-        db.to_csv(f"{OUTPUT_DIR}{filename}.csv")
-        s
-        print(f'Completed computing pv output.')
+    return energies
+
+def pv_no_DSM(path):
+    """
+    Estimated solar pv output for houses without a DSM.
+
+    Input
+    path(str): Path to building footprint vector layer
+
+    Output
+    db(DataFrame): Estimated average yearly pv output for each UPRN.
+    
+    """
+    filename = Path(path).stem
+    print(f'Computing pv output for {filename}...')
+    db = gpd.read_file(path, driver='GeoJSON')
+    db = db.to_crs(4326)
+    db['lng'] = db.geometry.centroid.x
+    db['lat'] = db.geometry.centroid.y
+
+    latitude = db['lat'].mean()
+    longitude = db['lng'].mean()
+    avg_alt = 103 # average altitude of West Midlands
+
+    location = Location(
+                        latitude,
+                        longitude,
+                        name='',
+                        altitude=avg_alt,
+                        tz='Etc/GMT+1',
+                    )
+    weather = get_weather(latitude, longitude)
+
+    pv_output = avg_pv_output(location, weather)
+    db['pv_output'] = db['shading_mean'] * pv_output * db['calculatedAreaValue'] * 0.9
+
+    # Select columns to keep 
+    keep_cols = ['uprn', 'lng', 'lat', 'shading_mean', 'calculatedAreaValue', 'pv_output']
+    db = pd.DataFrame(db)[keep_cols]
+
+    OUTPUT_DIR = os.getcwd() + '\\output\\no_DSM\\'
+    if not os.path.isdir(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+
+    db.to_csv(f"{OUTPUT_DIR}{filename}.csv", index=False)
+    print(f'Completed computing pv output.')
+    
+    return db
+
+def roof_segment(path):
+    """
+    Estimate pv output for roof segments using pvlib.
+
+    Input
+    path(str): Path to roof segment vector layer.
+
+    Output
+    db(DataFrame): Estimated yearly solar pv output for each UPRN.
+
+    """
+    filename = Path(path).stem
+    print(f'Computing pv output for {filename}...')
+
+    db = gpd.read_file(path, driver="GeoJSON")
+    db = db.dropna()
+    db = db.to_crs(4326)
+    db['lng'] = db.geometry.centroid.x
+    db['lat'] = db.geometry.centroid.y
+
+    latitude = db['lat'].mean()
+    longitude = db['lng'].mean()
+    weather = get_weather(latitude, longitude)
+
+    output = roof_segment_output(db, weather)
+    db['pv_output'] = db['shading_mean'] * output * db['AREA'].apply(np.floor)
+    db = db.groupby('uprn').agg(
+                        {
+                        'lat':np.average,
+                        'lng':np.average,
+                        'slope_mean':np.average,
+                        'aspect_mean':np.average,
+                        'shading_mean':np.average, 
+                        'pv_output': 'sum', 
+                        'AREA':'sum'
+                        })
+
+    OUTPUT_DIR = os.getcwd() + '\\output\\roof_segment\\'
+    if not os.path.isdir(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    db.to_csv(f"{OUTPUT_DIR}{filename}.csv", index=False)
+
+    return db
+
+def main():
+    FOLDER_DIR = os.getcwd() + '\\scripts\\calc_shadow\\output\\'
+    filesInFolder = glob(FOLDER_DIR + '*.geojson')
+    for path in filesInFolder:
+        roof_segment(path)
+
+    FOLDER_DIR = os.getcwd() + '\\data\\output\\proxy_data\\'
+    filesInFolder = glob(FOLDER_DIR + '*.geojson')
+    for path in filesInFolder:
+        pv_no_DSM(path)
 
 if __name__ == "__main__":
     main()
