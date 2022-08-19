@@ -509,8 +509,9 @@ class CalculateShading():
         print("Calculating area of layer...")
         start = time.time()
 
-        if not os.path.isdir(self.ROOT_DIR + 'unfiltered//'):
-            os.makedirs(self.ROOT_DIR + 'unfiltered//')
+        OUTPUT_DIR = self.ROOT_DIR + 'output//unfiltered//'
+        if not os.path.isdir(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR)
 
         area_params = {
             'INPUT':layer,
@@ -519,7 +520,7 @@ class CalculateShading():
             'FIELD_LENGTH':0,
             'FIELD_PRECISION':0,
             'FORMULA':'area($geometry)/cos("slope_mean" * 3.14159265359 / 180)',
-            'OUTPUT': self.ROOT_DIR + 'unfiltered//' + self.tile_name + '.geojson'
+            'OUTPUT': OUTPUT_DIR + self.tile_name + '.geojson'
             }
 
         output = processing.run("native:fieldcalculator", area_params)
@@ -544,7 +545,7 @@ class CalculateShading():
 
         filter_params = {
             'INPUT':layer,
-            'EXPRESSION':' ("AREA" > 5 AND 10 < "slope_mean" <= 60 AND 67.5 <= "aspect_mean" <=292.5) OR ("AREA" > 5 AND 0 < "slope_mean" <= 10 AND "aspect_mean" > 0)',
+            'EXPRESSION':' ("AREA" > 5 AND 10 < "slope_mean" <= 60 AND 1.178097 <= "aspect_mean" <= 5.1050881) OR ("AREA" > 5 AND 0 < "slope_mean" <= 10 AND "aspect_mean" > 0)',
             'OUTPUT':self.TEMP_PATH + 'filtered_houses.geojson'
             }
 
@@ -726,75 +727,30 @@ class CalculateShading():
         # Filter layers
         filtered = self.filter_polygons(area)
 
-        # Add kk factor and uprn
+        # Add uprn
         final_layer = self.add_uprn(filtered)
-        kk_factor = self.add_kk_factor(final_layer)
 
         end = time.time()
         print(f"Completed filtering houses {end-start}s")
         return final_layer
 
-    def add_kk_factor(self, layer):
-        print("Adding kk factor...")
-        start = time.time()
-
-        irradiance_df = pd.read_csv("C:/Users/lilia/Documents/GitHub/WMCA/DSSG_WMCA/data/processed/irradiance.csv", index_col=0)
-        irradiance_df.index = irradiance_df.index.astype(int)
-        irradiance_df.columns = irradiance_df.columns.astype(int)
-        
-        layer = QgsVectorLayer(layer,"","ogr")
-        layer_provider=layer.dataProvider()
-        layer_provider.addAttributes([QgsField("kk_factor",QVariant.Double)])
-        layer.updateFields()
-        
-        fields = layer.fields()
-        aspect_id = fields.indexOf('aspect_mean')
-        slope_id = fields.indexOf('slope_mean')
-        kk_id = fields.indexOf('kk_factor')
-        
-        layer.startEditing()
-        features=layer.getFeatures()
-        for f in features:
-            aspect = f.attributes()[aspect_id]
-            slope = f.attributes()[slope_id]
-            
-            if 0<aspect<175 and 0<slope<90:
-                aspect = 5 * round(aspect/5) # round to nearest 5
-                slope = round(slope)
-                print(aspect, slope)
-                if 0<slope<=10:
-                    kk_factor = irradiance_df.max().max()
-                else:
-                    kk_factor = int(irradiance_df[aspect][slope])
-                
-                print(f"kk_factor: {kk_factor}")
-
-                layer.changeAttributeValue(f.id(), kk_id, kk_factor)
-        
-        layer.commitChanges()
-
-        end = time.time()
-        print(f"Completed adding kk factor {end-start}s")
-        return layer
-
     def add_uprn(self, layer):
         print("Adding UPRN...")
         start = time.time()
 
-        
-        if not os.path.isdir(self.ROOT_DIR + 'output//'):
-            os.makedirs(self.ROOT_DIR + 'output//')
-
+        OUTPUT_DIR = self.ROOT_DIR + 'output//roof_segments//'
+        if not os.path.isdir(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR)
 
         params = {
             'INPUT':layer,
             'PREDICATE':[5],
             'JOIN':self.HOUSE_SHP_PATH,
-            'JOIN_FIELDS':['uprn'],
+            'JOIN_FIELDS':['uprn','buildingNumber', 'thoroughfare', 'postcode', 'parentUPRN'],
             'METHOD':0,
             'DISCARD_NONMATCHING':False,
             'PREFIX':'',
-            'OUTPUT': self.ROOT_DIR + 'output//'+ self.tile_name + ".geojson"
+            'OUTPUT': OUTPUT_DIR + self.tile_name + ".geojson"
             }
         output = processing.run("native:joinattributesbylocation", params)
 
@@ -849,7 +805,7 @@ def main():
     #     else:
     #         print(path)
     
-    HOUSE_SHP_PATH = "C:/Users/lilia/Downloads/wmca_download_2022-07-29_10-07-36/files/wmca_prj/project/unzip_files/output/SJ9000.geojson"
+    HOUSE_SHP_PATH = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//output/SJ9000.geojson"
     DSM_PATH = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//scripts//calc_shadow//DSM//sj9000_DSM_1M.asc"
 
     program = CalculateShading(DSM_PATH, HOUSE_SHP_PATH)

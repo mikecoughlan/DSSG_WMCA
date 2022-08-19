@@ -222,7 +222,7 @@ def main():
     """
     Assign all homes in AddressBasePremium to its building footprint from OSMap Topography and building height from OSMap Building Height Attribute. Building shapefiles saved in 'output' as .gml
     """
-    ROOT_DIR = "C:\\Users\\lilia\\Downloads\\wmca_download_2022-07-29_10-07-36\\files\\wmca_prj\\project\\unzip_files\\"
+    ROOT_DIR = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//"
 
     program = MergeFiles(ROOT_DIR)
 

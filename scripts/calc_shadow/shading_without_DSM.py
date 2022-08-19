@@ -4,13 +4,13 @@ from PyQt5.QtCore import QDate, QTime
 import sys
 
 # Initialize QGIS Application
-QgsApplication.setPrefixPath("C:\\OSGeo4W64\\apps\\qgis", True)
+QgsApplication.setPrefixPath("C://OSGeo4W64//apps//qgis", True)
 app = QgsApplication([], True)
 app.initQgis()
 
 # Add the path to Processing framework
-sys.path.append('C:\\Program Files\\QGIS 3.24.3\\apps\\qgis\\python\\plugins')
-sys.path.append('C:\\Users\\lilia\\AppData\\Roaming\\QGIS\\QGIS3\\profiles\\default\\python\\plugins')
+sys.path.append('C://Program Files//QGIS 3.24.3//apps//qgis//python//plugins')
+sys.path.append('C://Users//lilia//AppData//Roaming//QGIS//QGIS3//profiles//default//python//plugins')
 
 # Import UMEP
 from processing_umep.processing_umep_provider import ProcessingUMEPProvider
@@ -37,9 +37,9 @@ from shading_with_DSM import CalculateShading
 class ApproximateShading(CalculateShading):
     def __init__(self, HOUSE_SHP_PATH, crs='EPSG:27700'):
         self.PROJECT_CRS = QgsCoordinateReferenceSystem(crs)
-        self.ROOT_DIR = os.getcwd() + "\\"
+        self.ROOT_DIR = os.getcwd() + "//"
         
-        self.TEMP_PATH = self.ROOT_DIR + "temp\\"
+        self.TEMP_PATH = self.ROOT_DIR + "temp//"
         if not os.path.isdir(self.TEMP_PATH):
             os.makedirs(self.TEMP_PATH)
         self.clear_temp_folder()
@@ -146,7 +146,7 @@ class ApproximateShading(CalculateShading):
         (str): Path to merged vector layer
         
         """
-        output_path = self.ROOT_DIR + 'output_osmp\\'
+        output_path = self.ROOT_DIR + 'output//no_DSM_output//'
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
 
@@ -167,14 +167,14 @@ def main():
     BUILDING_FOOTPRINT_DIR = ""
 
     # footprint_files = glob(BUILDING_FOOTPRINT_DIR + "*.gml")
-    footprint_files = ["C:\\Users\\lilia\\Downloads\\wmca_download_2022-07-29_10-07-36\\files\\wmca_prj\\project\\unzip_files\\output\\SJ9000.gml"]
+    footprint_files = ["C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//output//SJ9000.gml"]
 
     for path in footprint_files:
         filename = Path(path).stem
         # topology_path = TOPOLOGY_DIR + f"5882272-{filename}.gml"
         # building_path = BUILDING_HEIGHT_DIR + f"{filename}.csv"
-        topology_path = "C:\\Users\\lilia\\Downloads\\wmca_download_2022-07-29_10-07-36\\files\\wmca_prj\\project\\unzip_files\\topology\\5882272-SJ9000.gml"
-        building_path = r"C:/Users/lilia/Downloads/wmca_download_2022-07-29_10-07-36/files/wmca_prj/project/unzip_files/building_height/SJ9000.csv"
+        topology_path = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//topology//5882272-SJ9000.gml"
+        building_path = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//building_height//SJ9000.csv"
         program = ApproximateShading(path)
         program.build_pseudo_DSM(building_path, topology_path)
         program.filter_houses(filename)

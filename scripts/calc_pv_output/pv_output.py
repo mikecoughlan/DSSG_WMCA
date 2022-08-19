@@ -111,7 +111,7 @@ def roof_segment_output(db, weather, timezone='Etc/GMT+1'):
     energies(list): Solar pv output estimates for roof segments
     
     """
-    print('Calculating solar output...')
+    print('Calculating roof segment solar output...')
     start = time.time()
 
     energies = []
@@ -144,7 +144,7 @@ def pv_no_DSM(path):
     """
     filename = Path(path).stem
     print(f'Computing pv output for {filename}...')
-    db = gpd.read_file(path, driver='GeoJSON')
+    db = gpd.read_file(path, driver='GML')
     db = db.to_crs(4326)
     db['lng'] = db.geometry.centroid.x
     db['lat'] = db.geometry.centroid.y
@@ -163,17 +163,16 @@ def pv_no_DSM(path):
     weather = get_weather(latitude, longitude)
 
     pv_output = avg_pv_output(location, weather)
-    db['pv_output'] = db['shading_mean'] * pv_output * db['calculatedAreaValue'] * 0.9
 
-    # Select columns to keep 
-    keep_cols = ['uprn', 'lng', 'lat', 'shading_mean', 'calculatedAreaValue', 'pv_output']
-    db = pd.DataFrame(db)[keep_cols]
+    # Get area reduction factor
+    tost = db.copy()
+    tost = tost.to_crs({'init': 'epsg:3857'})
+    tost['buffer_value'] = [-0.5]*len(tost)
+    tost['buffer'] = tost.buffer(tost['buffer_value'], resolution=16)
+    area_reduction = tost['buffer'].area/tost['geometry'].area
 
-    OUTPUT_DIR = os.getcwd() + '\\output\\no_DSM\\'
-    if not os.path.isdir(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-
-    db.to_csv(f"{OUTPUT_DIR}{filename}.csv", index=False)
+    db['pv_output'] = db['shading_mean'] * pv_output * db['calculatedAreaValue'] * area_reduction
+    
     print(f'Completed computing pv output.')
     
     return db
@@ -211,27 +210,38 @@ def roof_segment(path):
                         'slope_mean':np.average,
                         'aspect_mean':np.average,
                         'shading_mean':np.average, 
+                        'height_mean': np.average,
                         'pv_output': 'sum', 
+                        'thoroughfare': pd.Series.mode,
+                        'postcode': pd.Series.mode,
+                        'buildingNumber': pd.Series.mode,
+                        'parentUPRN': pd.Series.mode,
                         'AREA':'sum'
                         })
-
-    OUTPUT_DIR = os.getcwd() + '\\output\\roof_segment\\'
-    if not os.path.isdir(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-    db.to_csv(f"{OUTPUT_DIR}{filename}.csv", index=False)
 
     return db
 
 def main():
-    FOLDER_DIR = os.getcwd() + '\\scripts\\calc_shadow\\output\\'
+    FOLDER_DIR = 'scripts\\calc_shadow\\output\\roof_segments\\'
     filesInFolder = glob(FOLDER_DIR + '*.geojson')
-    for path in filesInFolder:
-        roof_segment(path)
 
-    FOLDER_DIR = os.getcwd() + '\\data\\output\\proxy_data\\'
-    filesInFolder = glob(FOLDER_DIR + '*.geojson')
+    roof_segment_pv = pd.DataFrame()
     for path in filesInFolder:
-        pv_no_DSM(path)
+        print(path)
+        roof_segment_pv = pd.concat([roof_segment_pv, roof_segment(path)])
+        
+    roof_segment_pv.reset_index().to_csv("scripts\\calc_pv_output\\output\\roof_segment_pv.csv", index=False)
+
+    FOLDER_DIR = 'data\\output\\proxy_data\\'
+    # FOLDER_DIR = 'scripts\\calc_shadow\\output\\no_DSM'
+    filesInFolder = glob(FOLDER_DIR + '*.gml')
+
+    building_pv = pd.DataFrame()
+    for path in filesInFolder:
+        print(path)
+        building_pv = pd.concat([building_pv, pv_no_DSM(path)])
+
+    building_pv.to_csv("scripts\\calc_pv_output\\output\\building_pv.csv", index=False)
 
 if __name__ == "__main__":
     main()
