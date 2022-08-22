@@ -4,7 +4,7 @@ Solar PV output is determined by the amount of solar radiation a module receives
 The problem is that determining these four input variables requires a site visit. Instead, the following script derives these values from other data source and compute the estimated solar PV output. We will focus our scope on residential buildings in the West Midlands. For more details, see our in-depth documentation.
 
 ## Note
-I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to ue Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
+I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to use Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
 
 ### Data
 - Ordinance Survey Building Height Attribute (format: `{tilename}.csv`)
