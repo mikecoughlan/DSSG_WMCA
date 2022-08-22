@@ -19,20 +19,33 @@ The problem is that determining these four input variables requires a site visit
 ### Folder structure
 solar pv
 ├── 01_calc_shadow              
-│   ├── temp	                  # Auto-created to store temp files
-│   ├── output	                # Auto-created to store outputs
-│   │   ├── roof_segments	    
-│   │   ├── roof_segments_unfiltered
-│   │   └── no_DSM
-│   ├── shading_with_DSM.py	    # Roof segmentation & shading
-│   └── shading_without_DSM.py	# Pseudo-DSM & shading
-├── 02_calc_pv_output           # PV output estimates
-│   ├── output                  # Stores csv outputs
-│   ├── MCS_output.py	
-│   └── pvlib_output.py
-└── 03_test_pv_output					
-    └── pv_test_set.ipynb      
 
+│   ├── temp	                  # Auto-created to store temp files
+
+│   ├── output	                # Auto-created to store outputs
+
+│   │   ├── roof_segments	    
+
+│   │   ├── roof_segments_unfiltered
+
+│   │   └── no_DSM
+
+│   ├── shading_with_DSM.py	    # Roof segmentation & shading
+
+│   └── shading_without_DSM.py	# Pseudo-DSM & shading
+
+├── 02_calc_pv_output           # PV output estimates
+
+│   ├── output                  # Stores csv outputs
+
+│   ├── MCS_output.py	
+
+│   └── pvlib_output.py
+
+└── 03_test_pv_output					
+
+    └── pv_test_set.ipynb      
+    
 ### Setup
 `01_calc_shadow`
 1. Follow the [instructions](https://www.qgistutorials.com/en/docs/running_qgis_jobs.html) from step 14-17 to set up the paths.
