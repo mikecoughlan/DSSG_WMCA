@@ -26,18 +26,12 @@ from osgeo import gdal
 from osgeo.gdalconst import *
 from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
 
-import numpy as np
 from glob import glob
 import shutil
 import os
 from pathlib import Path
 import time
-import pandas as pd 
-
-
-# DTM_FILE_PATH = "C://Users//lilia//Downloads//SURVEY_LIDAR_Composite_ASC_DTM.zip"
-# DTM = zipfile.ZipFile(DTM_FILE_PATH, 'r')
-# DTM_FILE_PATH = [name for name in DTM.namelist() if name.endswith('.asc')]
+import pickle
 
 class CalculateShading():
     """
@@ -57,28 +51,6 @@ class CalculateShading():
         self.DSM_path = self.convert_DSM_to_tif(DSM_PATH)
         self.extent = self.get_extent(self.DSM_path)
         self.HOUSE_SHP_PATH = self.clip_polygon(HOUSE_SHP_PATH, self.extent)
-
-    def merge_tiles(self, folder_path, output_path):
-        """
-        Output path extension .vrt
-        """
-        FILE_LIST = glob(folder_path)
-        build_vrt_params = {
-            'INPUT': FILE_LIST,
-            'RESOLUTION':0,
-            'SEPARATE':False,
-            'PROJ_DIFFERENCE':False,
-            'ADD_ALPHA':False,
-            'ASSIGN_CRS': self.PROJECT_CRS,
-            'RESAMPLING':0,
-            'SRC_NODATA':'',
-            'EXTRA':'',
-            'OUTPUT': output_path
-        }
-
-        output = processing.run('gdal:buildvirtualraster', build_vrt_params)
-        
-        return output['OUTPUT']
 
     def convert_DSM_to_tif(self, layer):
         """
@@ -270,21 +242,16 @@ class CalculateShading():
         
         return output['OUTPUT']
 
-    # def get_extent(self, layer):
-    #     params = {
-    #         'INPUT':layer,
-    #         'BAND':None
-    #         }
-
-    #     ext = processing.run("native:rasterlayerproperties", params)['EXTENT']
-    #     ext = ext.replace(" : ", ",").split(',')
-    #     ext = f"{ext[0]},{ext[2]},{ext[1]},{ext[3]} [EPSG:27700]"
-
-    #     print(ext)        
-        
-    #     return ext 
-
     def get_extent(self, layer):
+        """
+        Get and format extent of raster layer.
+
+        Input
+        layer(str): Path to raster layer
+
+        Output
+        (str): Formatted extent of raster
+        """
         layer = QgsRasterLayer(layer)
         
         ext = layer.extent()
@@ -293,7 +260,8 @@ class CalculateShading():
         ymin = ext.yMinimum()
         ymax = ext.yMaximum()
         coords = "%f,%f,%f,%f [EPSG:27700]" %(xmin, xmax, ymin, ymax)
-        print(coords)
+
+        print(f"Retrieved extent {coords}")
         return coords
 
     def clip_raster_by_mask(self, layer):
@@ -518,13 +486,13 @@ class CalculateShading():
         Calculate area of each polygon and replace file with added attribute.
 
         Input:
-        layer(str): Path to vector layer to calculate area of polygons (.gpkg)
+        layer(str): Path to vector layer to calculate area of polygons
         
         """
         print("Calculating area of layer...")
         start = time.time()
 
-        OUTPUT_DIR = self.ROOT_DIR + 'output//unfiltered//'
+        OUTPUT_DIR = self.ROOT_DIR + 'output//roof_segments_unfiltered//'
         if not os.path.isdir(OUTPUT_DIR):
             os.makedirs(OUTPUT_DIR)
 
@@ -797,36 +765,24 @@ class CalculateShading():
         return output['OUTPUT']
 
 def main():
-    # DSM_ZIPPED_PATH = ""   
-    # DSM_FILES = ['sj9000', 'sj9001', 'sj9002', 'sj9003'] 
-    # DSM_FILES = [DSM_ZIPPED_PATH + f + "_DSM_1M" for f in DSM_FILES]
-
-    # BUILDING_FOLDER = ""
-    # BUILDING_FILE_PATH = BUILDING_FOLDER + 'SJ9000.gml'
-    # BUILDING_FILE_PATH = glob(BUILDING_FILE_PATH+'*.gml')
-
-    # for path in DSM_FILES:
-    #     file_name = Path(path).stem
-    #     x, y = 0 if file_name[3] < 5 else 5, 0 if file_name[-1] < 5 else 5
-    #     tile_name = file_name[:3] + x + file_name[-2] + y
-    #     building_path = BUILDING_FOLDER + tile_name + '.gml'
-
-    #     if building_path in BUILDING_FILE_PATH:
-    #         program = ProcessDSM(path, building_path)
-    #         program.clear_temp_folder()
-    #         segmented_layer = program.roof_segmentation(path)
-    #         filtered_layer = program.filter_roof_segments(segmented_layer)
-
-    #     else:
-    #         print(path)
+    with open('../00_compare_grid/os_mapping.pkl', 'rb') as f:
+        os_mapping = pickle.load(f)
     
-    HOUSE_SHP_PATH = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//output/SJ9000.geojson"
-    DSM_PATH = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//scripts//calc_shadow//DSM//sj9000_DSM_1M.asc"
+    DSM_DIR = "../../../data/external/DSM/"
+    DSM_files = glob(DSM_DIR + "*.asc")
 
-    program = CalculateShading(DSM_PATH, HOUSE_SHP_PATH)
+    HOUSE_DIR = "../../../data/processed/output/"
+    house_files = glob(HOUSE_DIR + "*.geojson")
 
-    segmented_layer = program.roof_segmentation()
-    filtered_layer = program.filter_roof_segments(segmented_layer)       
+    for DSM_PATH in DSM_files:
+        tile_name = Path(DSM_PATH).stem.split('_')[0].upper()
+        HOUSE_SHP_PATH = HOUSE_DIR + os_mapping[tile_name] + '.geojson'
+
+        if HOUSE_SHP_PATH in house_files:
+            program = CalculateShading(DSM_PATH, HOUSE_SHP_PATH)
+            segmented_layer = program.roof_segmentation()
+            filtered_layer = program.filter_roof_segments(segmented_layer)
+   
     
 if __name__ == "__main__":
     main()
