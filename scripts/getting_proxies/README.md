@@ -26,6 +26,19 @@ The following creates the data required to predict EPC ratings, estimate solar P
 5. [Sub-regional fuel poverty data 2022](https://www.gov.uk/government/statistics/sub-regional-fuel-poverty-data-2022)
 6. [Lower and Middle Super Output Areas electricity consumption](https://www.gov.uk/government/statistics/lower-and-middle-super-output-areas-electricity-consumption)
 
+### Installation
+- [geopandas](https://geopandas.org/en/stable/getting_started/install.html) Python library to read geospatial data
+- [openpyxl](https://openpyxl.readthedocs.io/en/stable/) Python library to read Excel worksheets
+
+### Setup
+1. Set `ROOT_DIR` in `getting_proxies.py` to the main folder with all the OS Master Map data.
+2. The folder with the topology files don’t have an extension so add .gml to them, using
+```python
+for path in glob.glob(TOPOLOGY_DIR+’*’):
+  os.rename(path, path + ".gml")
+```
+2. Replace `WMCA_code` if you are working with another region.
+3. Run the Python script.
 
 ## Folder structure
 ```bash
@@ -38,21 +51,10 @@ data
     ├── LSOA_domestic_elect_2010-20.xlsx
     └── sub-regional-fuel-poverty-2022-tables.xlsx   
 pull_data
-    ├── get_EPC.py	                  
-    └── get_proxies.py	
+├── 01_get_EPC.py	                  
+├── 02_data_cleaning    
+│   ├── 01_data_cleaning.py
+│   └── 02_CHAID.py	    
+└── 03_get_proxies.py	
     
 ```
-
-## Installation
-- [geopandas](https://geopandas.org/en/stable/getting_started/install.html) Python library to read geospatial data
-- [openpyxl](https://openpyxl.readthedocs.io/en/stable/) Python library to read Excel worksheets
-
-## Setup
-1. Set `ROOT_DIR` in `getting_proxies.py` to the main folder with all the OS Master Map data.
-2. The folder with the topology files don’t have an extension so add .gml to them, using
-```python
-for path in glob.glob(TOPOLOGY_DIR+’*’):
-  os.rename(path, path + ".gml")
-```
-2. Replace `WMCA_code` if you are working with another region.
-3. Run the Python script.
