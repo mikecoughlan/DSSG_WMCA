@@ -4,10 +4,12 @@ Solar PV output is determined by the amount of solar radiation a module receives
 The problem is that determining these four input variables requires a site visit. Instead, the following script derives these values from other data source and compute the estimated solar PV output. We will focus our scope on residential buildings in the West Midlands. For more details, see our in-depth documentation.
 
 ## Note
-I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to ue Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
+I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to use Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
 
 ### Data
-- Ordinance Survey Data (Building Height Attribute, OS Master Map Topography, AddressBase Premium)
+- Ordinance Survey Building Height Attribute (format: `{tilename}.csv`)
+- Ordinance Survey Topology, Topographic Area (format: `{5882272-{tilename}.gml`)
+- Building footprint shapefiles (merged from `getting_proxies`, format: `{tilename}.geojson`)
 - [LIDAR Composite DSM 1m](https://environment.data.gov.uk/DefraDataDownload/?Mode=survey)
 - `02_calc_pv_output`: [MCS Irradiance Dataset](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwi2upKmosv5AhWTiFwKHRy2CSAQFnoECBIQAQ&url=https%3A%2F%2Fmcscertified.com%2Fwp-content%2Fuploads%2F2019%2F08%2FIrradiance-Datasets.xlsx&usg=AOvVaw27Q48eb99hbZqKVtBAbKzr)
 - `03_test_pv_output`: MCS Baseline data on solar PV installations and estimated output
@@ -35,7 +37,8 @@ solar pv
 │   │   ├── roof_segments_unfiltered
 │   │   └── no_DSM
 │   ├── shading_with_DSM.py	            # Roof segmentation & shading
-│   └── shading_without_DSM.py	        # Pseudo-DSM & shading
+│   ├── shading_without_DSM.py	        # Pseudo-DSM & shading
+│   └── launch.bat	                    # Runs OSGeo Shell
 ├── 02_calc_pv_output                   # PV output estimates
 │   ├── output                          # Stores csv outputs
 │   ├── MCS_output.py	
@@ -47,11 +50,22 @@ solar pv
 ### Setup
 `01_calc_shadow`
 1. Follow the [instructions](https://www.qgistutorials.com/en/docs/running_qgis_jobs.html) from step 14-17 to set up the paths.
-2. Change `ROOT_DIR` in `CONFIG` to the folder which holds the three main folders with the OS data
-3. Run `launch.bat` from the OSGeo Shell (for Windows, other OS might need different setups)
+2. Ensure folder structure for input data is correct. All input data should be in the top folder `data/processed/` and `data/raw/`.
+3. Edit last line of `launch.bat` to select Python script to execute.
+4. Run `launch.bat` from the OSGeo Shell (for Windows, other OS might need different setups).
 
 `02_calc_pv_output`
 1. Run Python script
 
 `03_test_pv_output`
 1. Run to compare estimations for solar PV output
+
+## Future Work
+The current methodology leaves much to be desired to get better estimates:
+- Acquire validation data for roof segments, aspect, slope and area
+- Improve roof segmentation for each segment to at least look visually correct
+- WMCA had concerns about the additional load on the electricity grid when more solar panels are installed. Estimate the self-consumption to determine the amount of electricity pushed back into the grid.
+- Acquire validation data for actual solar output to better compare between estimates: (1) pvlib, (2) MCS, and (3) MCS with our inputs.
+- Determine the number of solar panel modules that can fit on a roof based on its shape
+- The current shading method does not account for shadows cast by houses that lie beyond the border of the tile. This means there is a higher rate of error for all the houses along the border of each tile. I had planned to solve for this by breaking each tile into overlapping smaller tiles. Tiling also prevents QGIS from crashing with too big a tile.
+
