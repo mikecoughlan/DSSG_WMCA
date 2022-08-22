@@ -62,10 +62,10 @@ solar pv
 
 ## Future Work
 The current methodology leaves much to be desired to get better estimates:
-•	Acquire validation data for roof segments, aspect, slope and area
-•	Improve roof segmentation for each segment to at least look visually correct
-•	WMCA had concerns about the additional load on the electricity grid when more solar panels are installed. Estimate the self-consumption to determine the amount of electricity pushed back into the grid.
-•	Acquire validation data for actual solar output to better compare between estimates: (1) pvlib, (2) MCS, and (3) MCS with our inputs.
-•	Determine the number of solar panel modules that can fit on a roof based on its shape
-•	The current shading method does not account for shadows cast by houses that lie beyond the border of the tile. This means there is a higher rate of error for all the houses along the border of each tile. I had planned to solve for this by breaking each tile into overlapping smaller tiles. Tiling also prevents QGIS from crashing with too big a tile.
+- Acquire validation data for roof segments, aspect, slope and area
+- Improve roof segmentation for each segment to at least look visually correct
+- WMCA had concerns about the additional load on the electricity grid when more solar panels are installed. Estimate the self-consumption to determine the amount of electricity pushed back into the grid.
+- Acquire validation data for actual solar output to better compare between estimates: (1) pvlib, (2) MCS, and (3) MCS with our inputs.
+- Determine the number of solar panel modules that can fit on a roof based on its shape
+- The current shading method does not account for shadows cast by houses that lie beyond the border of the tile. This means there is a higher rate of error for all the houses along the border of each tile. I had planned to solve for this by breaking each tile into overlapping smaller tiles. Tiling also prevents QGIS from crashing with too big a tile.
 
