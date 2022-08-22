@@ -7,9 +7,9 @@ The problem is that determining these four input variables requires a site visit
 I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to ue Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
 
 ### Data
-- Ordinance Survey Building Height Attribute (format: {tilename}.csv)
-- Ordinance Survey Topology, Topographic Area (format: {5882272-{tilename}.gml}
-- Building footprint shapefiles (merged from `getting_proxies`, format: {tilename}.geojson)
+- Ordinance Survey Building Height Attribute (format: `{tilename}.csv`)
+- Ordinance Survey Topology, Topographic Area (format: `{5882272-{tilename}.gml`)
+- Building footprint shapefiles (merged from `getting_proxies`, format: `{tilename}.geojson`)
 - [LIDAR Composite DSM 1m](https://environment.data.gov.uk/DefraDataDownload/?Mode=survey)
 - `02_calc_pv_output`: [MCS Irradiance Dataset](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwi2upKmosv5AhWTiFwKHRy2CSAQFnoECBIQAQ&url=https%3A%2F%2Fmcscertified.com%2Fwp-content%2Fuploads%2F2019%2F08%2FIrradiance-Datasets.xlsx&usg=AOvVaw27Q48eb99hbZqKVtBAbKzr)
 - `03_test_pv_output`: MCS Baseline data on solar PV installations and estimated output
@@ -37,7 +37,8 @@ solar pv
 │   │   ├── roof_segments_unfiltered
 │   │   └── no_DSM
 │   ├── shading_with_DSM.py	            # Roof segmentation & shading
-│   └── shading_without_DSM.py	        # Pseudo-DSM & shading
+│   ├── shading_without_DSM.py	        # Pseudo-DSM & shading
+│   └── launch.bat	                    # Runs OSGeo Shell
 ├── 02_calc_pv_output                   # PV output estimates
 │   ├── output                          # Stores csv outputs
 │   ├── MCS_output.py	
@@ -49,8 +50,9 @@ solar pv
 ### Setup
 `01_calc_shadow`
 1. Follow the [instructions](https://www.qgistutorials.com/en/docs/running_qgis_jobs.html) from step 14-17 to set up the paths.
-2. Change `ROOT_DIR` in `CONFIG` to the folder which holds the three main folders with the OS data
-3. Run `launch.bat` from the OSGeo Shell (for Windows, other OS might need different setups)
+2. Ensure folder structure for input data is correct. All input data should be in the top folder `data/processed/` and `data/raw/`.
+3. Edit last line of `launch.bat` to select Python script to execute.
+4. Run `launch.bat` from the OSGeo Shell (for Windows, other OS might need different setups).
 
 `02_calc_pv_output`
 1. Run Python script
