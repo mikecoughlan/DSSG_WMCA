@@ -50,6 +50,17 @@ class ApproximateShading(CalculateShading):
         print(self.tile_name)     
         
     def build_pseudo_DSM(self, building_height, topology_area):
+        """
+        Create pseudo-DSM from building height.
+
+        Input
+        building_height(str): Path to building height attribute file
+        topology_area(str): Path to topology area file
+
+        Output
+        (str): Path to pseudo-DSM
+        
+        """
         print("Building pseudo DSM...")
         start = time.time()
 
@@ -93,8 +104,20 @@ class ApproximateShading(CalculateShading):
         return self.pseudo_DSM
     
     def extract_extent(self, layer):
+        """
+        Get and format extent from vector layer.
+
+        Input
+        layer(str): Path to vector layer
+
+        Output
+        ext(str): Extent of vector layer
+        
+        """
         ext = QgsVectorLayer(layer, '', 'ogr' ).extent()
         ext = f"{ext.xMinimum()},{ext.xMaximum()},{ext.yMinimum()},{ext.yMaximum()} [EPSG:27700]"
+
+        print(f"Retrieved extent {ext}.")
         return ext
 
     def rasterize(self, layer):
@@ -143,10 +166,10 @@ class ApproximateShading(CalculateShading):
         layer(str): Path to vector layer
 
         Output:
-        (str): Path to merged vector layer
+        merged(str): Path to merged vector layer
         
         """
-        output_path = self.ROOT_DIR + 'output//no_DSM_output//'
+        output_path = self.ROOT_DIR + 'output//no_DSM//'
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
 
@@ -162,19 +185,16 @@ class ApproximateShading(CalculateShading):
 
 
 def main(): 
-    TOPOLOGY_DIR = ""
-    BUILDING_HEIGHT_DIR = ""
-    BUILDING_FOOTPRINT_DIR = ""
+    TOPOLOGY_DIR = "../../../data/raw/topology/"
+    BUILDING_HEIGHT_DIR = "../../../data/raw/building_height/"
+    BUILDING_FOOTPRINT_DIR = "../../../data/processed/output/"
 
-    # footprint_files = glob(BUILDING_FOOTPRINT_DIR + "*.gml")
-    footprint_files = ["C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//output//SJ9000.gml"]
+    footprint_files = glob(BUILDING_FOOTPRINT_DIR + "*.geojson")
 
     for path in footprint_files:
         filename = Path(path).stem
-        # topology_path = TOPOLOGY_DIR + f"5882272-{filename}.gml"
-        # building_path = BUILDING_HEIGHT_DIR + f"{filename}.csv"
-        topology_path = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//topology//5882272-SJ9000.gml"
-        building_path = "C://Users//lilia//Documents//GitHub//WMCA//DSSG_WMCA//data//external//building_height//SJ9000.csv"
+        topology_path = TOPOLOGY_DIR + f"5882272-{filename}.gml"
+        building_path = BUILDING_HEIGHT_DIR + f"{filename}.csv"
         program = ApproximateShading(path)
         program.build_pseudo_DSM(building_path, topology_path)
         program.filter_houses(filename)
