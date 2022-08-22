@@ -3,6 +3,9 @@ Solar PV output is determined by the amount of solar radiation a module receives
 
 The problem is that determining these four input variables requires a site visit. Instead, the following script derives these values from other data source and compute the estimated solar PV output. We will focus our scope on residential buildings in the West Midlands. For more details, see our in-depth documentation.
 
+## Note
+I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to ue Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
+
 ### Data
 - Ordinance Survey Data (Building Height Attribute, OS Master Map Topography, AddressBase Premium)
 - [LIDAR Composite DSM 1m](https://environment.data.gov.uk/DefraDataDownload/?Mode=survey)
@@ -19,16 +22,22 @@ The problem is that determining these four input variables requires a site visit
 ### Folder structure
 ```bash
 solar pv
+├── 00_compare_grid   
+│   ├── compare_grid.ipynb	            # Auto-created to store outputs
+│   ├── DSM_grid.txt	                # DSM tiles received from Defra
+│   ├── osmapFileName.txt	            # Ordinance Survey data for West Midlands
+│   ├── os_mapping.pkl	                # Dictionary to map building footprint files and DSM data
+│   └── missing_tiles.txt               # Areas in West Midlands not covered by DSM
 ├── 01_calc_shadow              
-│   ├── temp	                    # Auto-created to store temp files
-│   ├── output	                    # Auto-created to store outputs
+│   ├── temp	                        # Auto-created to store temp files
+│   ├── output	                        # Auto-created to store outputs
 │   │   ├── roof_segments	    
 │   │   ├── roof_segments_unfiltered
 │   │   └── no_DSM
-│   ├── shading_with_DSM.py	        # Roof segmentation & shading
-│   └── shading_without_DSM.py	    # Pseudo-DSM & shading
-├── 02_calc_pv_output               # PV output estimates
-│   ├── output                      # Stores csv outputs
+│   ├── shading_with_DSM.py	            # Roof segmentation & shading
+│   └── shading_without_DSM.py	        # Pseudo-DSM & shading
+├── 02_calc_pv_output                   # PV output estimates
+│   ├── output                          # Stores csv outputs
 │   ├── MCS_output.py	
 │   └── pvlib_output.py
 └── 03_test_pv_output					
