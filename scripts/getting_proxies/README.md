@@ -1,8 +1,22 @@
 # Pull Data
 
+## Getting EPC data
+EPC ratings were introduced in stages from 2007 and cover residential and non-residential buildings. A buildings will have an EPC rating if it has been built, sold or rented after 2008.  Following our scope, we are only looking at the EPC ratings for residential buildings.
+
+We will use the EPC data to (1) determine which property features are most predictive of energy efficiency and (2) build a labelled dataset with the known EPC ratings and heating types. For more details see [here]().
+
+### Installations
+- [requests](https://pypi.org/project/requests/) to pull from API
+- (optional) [geopandas](https://geopandas.org/en/stable/getting_started/install.html) Python library to read geospatial data
+- [scikit-learn](https://scikit-learn.org/stable/) Python library for CHAID
+
+### Setup
+1. Register for an account at [Energy Performance of Buildings Data: England and Wales](https://epc.opendatacommunities.org/) to get your API.
+2. Replace `AUTH_TOKEN` with your API key.
+3. Run Python script.
 
 ## Getting proxies
-The following creates the data required to predicting EPC ratings, estimate solar PV output and determine heat pump capacity. The final output from the process outlined in this document will be a series of .geojson files while another set of files will be encoded and saved as .csv for model training. For more details see [here]().
+The following creates the data required to predict EPC ratings, estimate solar PV output and determine heat pump capacity. The final output from the process outlined in this document will be a series of .geojson files while another set of files will be encoded and saved as .csv for model training. For more details see [here]().
 
 ### Data
 1. [OS MasterMap Topography Layer](https://www.ordnancesurvey.co.uk/business-government/products/mastermap-topography): building footprints (format: `5882272-{tilename}.gml`)
@@ -40,4 +54,5 @@ pull_data
 for path in glob.glob(TOPOLOGY_DIR+’*’):
   os.rename(path, path + ".gml")
 ```
+2. Replace `WMCA_code` if you are working with another region.
 3. Run the Python script.
