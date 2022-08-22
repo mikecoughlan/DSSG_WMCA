@@ -13,7 +13,8 @@ We will use the EPC data to (1) determine which property features are most predi
 ### Setup
 1. Register for an account at [Energy Performance of Buildings Data: England and Wales](https://epc.opendatacommunities.org/) to get your API.
 2. Replace `AUTH_TOKEN` with your API key.
-3. Run Python script.
+3. Run `01_get_epc.py`.
+4. Run `01_data_cleaning.py`, `02_CHAID.py`.
 
 ## Getting proxies
 The following creates the data required to predict EPC ratings, estimate solar PV output and determine heat pump capacity. The final output from the process outlined in this document will be a series of .geojson files while another set of files will be encoded and saved as .csv for model training. For more details see [here]().
@@ -52,9 +53,11 @@ data
     └── sub-regional-fuel-poverty-2022-tables.xlsx   
 pull_data
 ├── 01_get_EPC.py	                  
-├── 02_data_cleaning    
+├── 02_data_preprocessing
 │   ├── 01_data_cleaning.py
-│   └── 02_CHAID.py	    
+│   ├── 02_cleaning_categorical_data.py
+│   ├── 03_CHAID.py
+│   └── 04_encoding_categorical.py	    
 └── 03_get_proxies.py	
     
 ```
