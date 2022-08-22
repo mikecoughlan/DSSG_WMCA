@@ -6,15 +6,15 @@ EPC ratings were introduced in stages from 2007 and cover residential and non-re
 We will use the EPC data to (1) determine which property features are most predictive of energy efficiency and (2) build a labelled dataset with the known EPC ratings and heating types. For more details see [here]().
 
 ### Installations
-- [requests](https://pypi.org/project/requests/) to pull from API
-- (optional) [geopandas](https://geopandas.org/en/stable/getting_started/install.html) Python library to read geospatial data
-- [scikit-learn](https://scikit-learn.org/stable/) Python library for CHAID
+- [requests](https://pypi.org/project/requests/) to pull from API.
+- (optional) [geopandas](https://geopandas.org/en/stable/getting_started/install.html) Python library to read geospatial data.
+- [scikit-learn](https://scikit-learn.org/stable/) Python library for CHAID and encoding.
 
 ### Setup
 1. Register for an account at [Energy Performance of Buildings Data: England and Wales](https://epc.opendatacommunities.org/) to get your API.
 2. Replace `AUTH_TOKEN` with your API key.
-3. Run `01_get_epc.py`.
-4. Run `01_data_cleaning.py`, `02_CHAID.py`.
+3. Run `01_get_epc.py` from the folder.
+4. Run `main.py` from `02_data_preprocessing` from the folder.
 
 ## Getting proxies
 The following creates the data required to predict EPC ratings, estimate solar PV output and determine heat pump capacity. The final output from the process outlined in this document will be a series of .geojson files while another set of files will be encoded and saved as .csv for model training. For more details see [here]().
@@ -39,18 +39,21 @@ for path in glob.glob(TOPOLOGY_DIR+’*’):
   os.rename(path, path + ".gml")
 ```
 2. Replace `WMCA_code` if you are working with another region.
-3. Run the Python script.
+3. Run the Python script from within its folder.
 
 ## Folder structure
 ```bash
 data
-└── external   
-    ├── building_height	        
-    ├── landbaseprem	            
-    ├── topology	                  
-    ├── ONSUD_AUG_2022_WM.csv    
-    ├── LSOA_domestic_elect_2010-20.xlsx
-    └── sub-regional-fuel-poverty-2022-tables.xlsx   
+├── external                                            # Data downloaded from other sources
+│   ├── building_height	        
+│   ├── landbaseprem	            
+│   ├── topology	                  
+│   ├── ONSUD_AUG_2022_WM.csv    
+│   ├── LSOA_domestic_elect_2010-20.xlsx
+│   └── sub-regional-fuel-poverty-2022-tables.xlsx   
+├── raw                                                 # Pulled EPC data
+├── processed                                           # Processed EPC data
+└── output                                              # Final outputs	
 pull_data
 ├── 01_get_EPC.py	                  
 ├── 02_data_preprocessing
@@ -58,6 +61,8 @@ pull_data
 │   ├── 02_cleaning_categorical_data.py
 │   ├── 03_CHAID.py
 │   └── 04_encoding_categorical.py	    
-└── 03_get_proxies.py	
+├── 03_get_proxies.py	
+├── notebooks	
+└── plots	                                              # Saved plots from notebooks
     
 ```
