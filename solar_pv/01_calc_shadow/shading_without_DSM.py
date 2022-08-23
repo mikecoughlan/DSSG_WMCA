@@ -42,7 +42,7 @@ class ApproximateShading(CalculateShading):
         self.TEMP_PATH = self.ROOT_DIR + "temp//"
         if not os.path.isdir(self.TEMP_PATH):
             os.makedirs(self.TEMP_PATH)
-        self.clear_temp_folder()
+        # self.clear_temp_folder()
           
         self.HOUSE_SHP_PATH = HOUSE_SHP_PATH
         self.extent = self.extract_extent(self.HOUSE_SHP_PATH)
@@ -183,14 +183,15 @@ class ApproximateShading(CalculateShading):
             os.makedirs(output_path)
 
         shading_stats = self.calculate_shading(self.pseudo_DSM, self.HOUSE_SHP_PATH)
-        merged = self.merge_vector_layers(
-            self.HOUSE_SHP_PATH, 
-            shading_stats, 
-            ['shading_mean'],
-            output_path + f"{filename}.geojson"
-            )
-
-        return merged
+        
+        params = {
+            'INPUT': shading_stats,
+            'FIELDS':['uprn','postcode','buildingNumber','thoroughfare','parentUPRN','calculatedAreaValue','AbsHMax','shading_mean'],
+            'OUTPUT':output_path + f"{filename}.geojson"
+            }
+        output = processing.run("native:retainfields", params)
+        
+        return output['OUTPUT']
 
 
 def main(): 
@@ -208,6 +209,7 @@ def main():
         program = ApproximateShading(path)
         program.build_pseudo_DSM(building_path, topology_path)
         program.filter_houses(filename)
+        
 
 if __name__ == "__main__":
     main()

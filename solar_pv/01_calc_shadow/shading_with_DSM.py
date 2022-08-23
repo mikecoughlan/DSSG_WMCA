@@ -439,7 +439,8 @@ class CalculateShading():
             'RASTER_BAND':1,
             'COLUMN_PREFIX':prefix + '_',
             'STATISTICS':[2],
-            'OUTPUT': 'TEMPORARY_OUTPUT'
+            'OUTPUT': self.TEMP_PATH + prefix + '.geojson'
+            # 'OUTPUT': 'TEMPORARY_OUTPUT'
             }
 
         output = processing.run("native:zonalstatisticsfb", stats_params)

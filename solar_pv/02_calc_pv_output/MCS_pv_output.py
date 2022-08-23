@@ -33,7 +33,7 @@ def get_kk_factor(db, irradiance_df):
 
 def main():
     # Get irradiance data for mapping
-    IRRADIANCE_PATH = os.getcwd() + "\\data\\external\\Irradiance-Datasets.xlsx"
+    IRRADIANCE_PATH = "..\\..\\data\\external\\Irradiance-Datasets.xlsx"
     irradiance_df = pd.read_excel(IRRADIANCE_PATH, sheet_name="Zone 6 - Birmingham", header=0)
     irradiance_df.columns = irradiance_df.loc[0].convert_dtypes()
     irradiance_df = irradiance_df.drop(0, axis=0)
@@ -42,11 +42,11 @@ def main():
     irradiance_df = irradiance_df.iloc[: , 1:]
 
     # Loop through roof segments in tiles
-    FOLDER_DIR = os.getcwd() + '\\scripts\\solar_pv\\01_calc_shadow\\output\\roof_segments_unfiltered\\'
+    FOLDER_DIR = '..\\01_calc_shadow\\output\\roof_segments_unfiltered\\'
     filesInFolder = glob(FOLDER_DIR + '*.geojson')
     print(filesInFolder)
 
-    OUTPUT_DIR = os.getcwd() + '\\scripts\\solar_pv\\02_calc_pv_output\\output\\'
+    OUTPUT_DIR = '\\output\\'
     if not os.path.isdir(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 

@@ -144,7 +144,7 @@ def pv_no_DSM(path):
     """
     filename = Path(path).stem
     print(f'Computing pv output for {filename}...')
-    db = gpd.read_file(path, driver='GML')
+    db = gpd.read_file(path, driver='GeoJSON')
     db = db.to_crs(4326)
     db['lng'] = db.geometry.centroid.x
     db['lat'] = db.geometry.centroid.y
@@ -172,7 +172,7 @@ def pv_no_DSM(path):
     tost['buffer'] = tost.buffer(tost['buffer_value'], resolution=16)
     area_reduction = tost['buffer'].area/tost['geometry'].area
 
-    db['pv_output'] = db['shading_mean'] * pv_output * db['calculatedAreaValue'] * area_reduction
+    db['pv_output'] = db['shading_mean'] * pv_output * db['calculatedAreaValue'] * area_reduction /1000
     
     print(f'Completed computing pv output.')
     
@@ -224,23 +224,23 @@ def roof_segment(path):
     return db
 
 def main():
-    FOLDER_DIR = '../01_calc_shadow/output/roof_segments/'
-    filesInFolder = glob(FOLDER_DIR + '*.geojson')
+    # FOLDER_DIR = '../01_calc_shadow/output/roof_segments_unfiltered/'
+    # filesInFolder = glob(FOLDER_DIR + '*.geojson')
 
-    roof_segment_pv = pd.DataFrame()
-    for path in filesInFolder:
-        roof_segment_pv = pd.concat([roof_segment_pv, roof_segment(path)])
+    # roof_segment_pv = pd.DataFrame()
+    # for path in filesInFolder:
+    #     roof_segment_pv = gpd.GeoDataFrame(pd.concat([roof_segment_pv, roof_segment(path)]))
         
-    roof_segment_pv.reset_index().to_csv("output/roof_segment_pv.csv", index=False)
+    # roof_segment_pv.to_file("output/roof_segment_pv.geojson", driver="GeoJSON")
 
     FOLDER_DIR = '../01_calc_shadow/output/no_DSM/'
-    filesInFolder = glob(FOLDER_DIR + '*.gml')
+    filesInFolder = glob(FOLDER_DIR + '*.geojson')
 
     building_pv = pd.DataFrame()
     for path in filesInFolder:
-        building_pv = pd.concat([building_pv, pv_no_DSM(path)])
+        building_pv = gpd.GeoDataFrame(pd.concat([building_pv, pv_no_DSM(path)]))
 
-    building_pv.to_csv("output/building_pv.csv", index=False)
+    building_pv.to_file("output/building_pv.geojson", driver="GeoJSON")
 
 if __name__ == "__main__":
     main()
