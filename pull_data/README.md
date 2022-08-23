@@ -67,3 +67,6 @@ pull_data
 └── plots	                                              # Saved plots from notebooks
     
 ```
+
+## References
+The method used here was largely inspired by [Using machine learning to predict energy efficiency (February 2020) by Sonia Williams](https://datasciencecampus.ons.gov.uk/projects/using-machine-learning-to-predict-energy-efficiency/).
