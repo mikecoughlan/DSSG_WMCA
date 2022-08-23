@@ -25,7 +25,7 @@ I successfully ran the code on my local Windows machine. However, the licensed O
 ```bash
 solar pv
 ├── 00_compare_grid   
-│   ├── compare_grid.ipynb	            # Auto-created to store outputs
+│   ├── compare_grid.ipynb	            
 │   ├── DSM_grid.txt	                # DSM tiles received from Defra
 │   ├── osmapFileName.txt	            # Ordinance Survey data for West Midlands
 │   ├── os_mapping.pkl	                # Dictionary to map building footprint files and DSM data
