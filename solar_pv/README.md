@@ -55,7 +55,7 @@ solar pv
 4. Run `launch.bat` from the OSGeo Shell (for Windows, other OS might need different setups).
 
 `02_calc_pv_output`
-1. Run Python script
+1. Run Python script from the folder.
 
 `03_test_pv_output`
 1. Run to compare estimations for solar PV output
