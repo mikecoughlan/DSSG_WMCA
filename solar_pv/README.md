@@ -8,7 +8,7 @@ I successfully ran the code on my local Windows machine. However, the licensed O
 
 ### Data
 - Ordinance Survey Building Height Attribute (format: `{tilename}.csv`)
-- Ordinance Survey Topology, Topographic Area (format: `{5882272-{tilename}.gml`)
+- Ordinance Survey Topology, Topographic Area (format: `5882272-{tilename}.gml`)
 - Building footprint shapefiles (merged from `getting_proxies`, format: `{tilename}.geojson`)
 - [LIDAR Composite DSM 1m](https://environment.data.gov.uk/DefraDataDownload/?Mode=survey)
 - `02_calc_pv_output`: [MCS Irradiance Dataset](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwi2upKmosv5AhWTiFwKHRy2CSAQFnoECBIQAQ&url=https%3A%2F%2Fmcscertified.com%2Fwp-content%2Fuploads%2F2019%2F08%2FIrradiance-Datasets.xlsx&usg=AOvVaw27Q48eb99hbZqKVtBAbKzr)
@@ -25,7 +25,7 @@ I successfully ran the code on my local Windows machine. However, the licensed O
 ```bash
 solar pv
 ├── 00_compare_grid   
-│   ├── compare_grid.ipynb	            # Auto-created to store outputs
+│   ├── compare_grid.ipynb	            
 │   ├── DSM_grid.txt	                # DSM tiles received from Defra
 │   ├── osmapFileName.txt	            # Ordinance Survey data for West Midlands
 │   ├── os_mapping.pkl	                # Dictionary to map building footprint files and DSM data
@@ -55,7 +55,7 @@ solar pv
 4. Run `launch.bat` from the OSGeo Shell (for Windows, other OS might need different setups).
 
 `02_calc_pv_output`
-1. Run Python script
+1. Run Python script from the folder.
 
 `03_test_pv_output`
 1. Run to compare estimations for solar PV output
