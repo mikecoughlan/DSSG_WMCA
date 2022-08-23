@@ -3,6 +3,11 @@ Solar PV output is determined by the amount of solar radiation a module receives
 
 The problem is that determining these four input variables requires a site visit. Instead, the following script derives these values from other data source and compute the estimated solar PV output. We will focus our scope on residential buildings in the West Midlands. For more details, see our in-depth documentation.
 
+We compared the MCS estimates with another method of estimation from an open-source Python library -- pvlib  with on a single 5km by 5km tile before scaling up the process. Ultimately, we found that the pvlib estimates were within the same order of magnitude with MCS estimates without requiring information on the slope and aspect of the roof. This means that the method can be scaled easily with only the building footprint and height information.
+
+![image](https://user-images.githubusercontent.com/43257301/186118327-f92e7427-c35f-472a-8c50-d221526f2759.png)
+
+
 ## Note
 I successfully ran the code on my local Windows machine. However, the licensed Ordinance Survey data required us to use Aridhia (a secure platform) to run the scripts. The scripts got stuck on clipping the building footprint shapefiles (function `clip_polygons`) without throwing an error and we were unable to fix the issue. Therefore, we could not get estimates for all of the West Midlands, only one 5km by 5km tile.
 
