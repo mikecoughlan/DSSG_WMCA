@@ -69,3 +69,5 @@ The current methodology leaves much to be desired to get better estimates:
 - Determine the number of solar panel modules that can fit on a roof based on its shape
 - The current shading method does not account for shadows cast by houses that lie beyond the border of the tile. This means there is a higher rate of error for all the houses along the border of each tile. I had planned to solve for this by breaking each tile into overlapping smaller tiles. Tiling also prevents QGIS from crashing with too big a tile.
 
+## References
+The method applied here was largely inspired by [Mapping Solar PV Potential in Ambleside (Dec 2019) by Alex Boyd](https://aafaf.uk/uploads/7/2/0/5/72055569/mapping_solar_pv_potential_in_ambleside__final_updated__jan_2020.pdf). 
