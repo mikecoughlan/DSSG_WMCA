@@ -13,8 +13,9 @@ We will use the EPC data to (1) determine which property features are most predi
 ### Setup
 1. Register for an account at [Energy Performance of Buildings Data: England and Wales](https://epc.opendatacommunities.org/) to get your API.
 2. Replace `AUTH_TOKEN` with your API key.
-3. Run `01_get_epc.py` from the folder.
-4. Run `main.py` from `02_data_preprocessing` from the folder.
+3. Replace local authority codes or postcodes to the region of interest if it is not the West Midlands.
+4. Run `01_get_epc.py` from the folder.
+5. Run `main.py` from `02_data_preprocessing` from the folder.
 
 ## Getting proxies
 The following creates the data required to predict EPC ratings, estimate solar PV output and determine heat pump capacity. The final output from the process outlined in this document will be a series of .geojson files while another set of files will be encoded and saved as .csv for model training. For more details see [here]().
