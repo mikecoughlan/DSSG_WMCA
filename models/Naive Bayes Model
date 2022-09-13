@@ -1,0 +1,72 @@
+#DSSG models 
+
+#importing the prerequisites
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
+
+
+
+#the train test split set
+def splitting_train_and_test(df, target, test_size):
+	
+	INPUTS:
+		df (pd.df)
+		target (str)
+		test_size (0.25)
+		
+	RETURNS:
+		X_train (np.array) 
+		X_test (np.array)
+		y_train (np.array) 
+		y_test (np.array)
+
+	y = target
+	print(target)
+	y_train = y[:int((len(df)*(1-test_size)))]
+	print(y_train)
+	y_test = y[int((len(df)*(1-test_size))):]
+	print(y_test)
+	X_train = df[:int((len(df)*(1-test_size)))]
+	X_test = df[int((len(df)*(1-test_size))):]
+
+	print(y_train.isnull().sum())
+	print(y_test.isnull().sum())
+	print(X_train.isnull().sum())
+	print(X_test.isnull().sum())
+
+	return X_train, X_test, y_train, y_test
+
+
+#Naive Bayes Model
+def NaiveBayesModel(X_train, X_test, y_train, y_test,priors,var_smoothing):
+	
+		INPUTS:
+			X_train (np.array)
+			X_test (np.array)
+			y_train (np.array)
+			y_test (np.array)
+
+			
+		RETURNS:
+			model
+			
+
+	model = GaussianNB(priors = None,var_smoothing=1e-9)
+	model.fit(X_train, y_train)
+	y_pred = model.predict(X_test)
+
+	acc = accuracy_score(y_test, y_pred)
+	
+	return model
+
+
+	
+
+
+
+
